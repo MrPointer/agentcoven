@@ -4,6 +4,12 @@ cova is the reference implementation of the [AgentCoven specification][spec]. It
 
 Think of it like chezmoi for AI building blocks: a declarative source state in git, an applied target state on disk, and a CLI that reconciles between them.
 
+## Workspaces
+
+cova maintains local clones of subscribed coven repositories under the XDG cache directory. These workspaces are shared across subscriptions to the same repository and used by both apply and contribute operations. See [Workspaces][workspaces] for details.
+
+---
+
 ## Application
 
 cova reconciles the user's local filesystem with the desired state derived from their subscriptions. Blocks in the coven repository are already [namespaced][naming] — application copies them to the appropriate framework locations and tracks what it manages. See [Application][application] for the full mechanics.
@@ -13,6 +19,12 @@ cova reconciles the user's local filesystem with the desired state derived from 
 ## Adapters
 
 Framework-specific translation is handled by pluggable adapters. Each adapter maps block types to the locations and formats a specific agent framework expects. See [Adapters][adapters] for supported frameworks and how to add new ones.
+
+---
+
+## Contributing
+
+Users propose changes to a coven — editing existing blocks or adding new ones — through a two-stage workflow. `cova package` handles namespacing, validation, and placement. `cova submit` extends packaging with automated git operations and optional PR creation. See [Contributing][contributing] for the full workflow.
 
 ---
 
@@ -53,3 +65,5 @@ Every entry in `frameworks` must match a known [adapter][adapters]. cova validat
 [configuration]: #configuration
 [application]: ./application.md
 [adapters]: ./adapters.md
+[contributing]: ./contributing.md
+[workspaces]: ./workspaces.md
