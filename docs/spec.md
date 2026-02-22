@@ -207,7 +207,6 @@ A user subscribed to two teams from Acme and one from Contoso sees blocks applie
 
 <!-- Reference Links -->
 [cova]: ./cova/index.md
-[cova-config]: ./cova/configuration.md
 [manifest]: #root-manifest
 [team-manifest]: #team-manifest
 [monorepo]: #monorepo
