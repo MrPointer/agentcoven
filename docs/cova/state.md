@@ -21,7 +21,7 @@ State is machine-managed data, not something users edit by hand. SQLite provides
 - **Querying.** "Which blocks came from this subscription?" is a SQL query, not a full-file scan.
 - **Built-in locking.** Safe against concurrent access without custom locking code.
 
-Inspectability comes through [`cova status`][status] rather than reading the database directly.
+Inspectability comes through `cova status` rather than reading the database directly.
 
 ---
 
@@ -47,7 +47,7 @@ The `path` column is the primary key — each target file maps to exactly one so
 - **Scoping.** cova only touches files it has recorded in state. The user's own blocks are never modified or deleted.
 - **Drift detection.** If a managed file's checksum no longer matches, cova knows the file was modified outside of cova and can warn or re-apply.
 - **Cleanup.** On [remove][consuming-remove], cova queries state for all files belonging to a subscription and deletes exactly those.
-- **Auditability.** State provides a complete record of what's applied from where — surfaced to the user via [`cova status`][status].
+- **Auditability.** State provides a complete record of what's applied from where — surfaced to the user via `cova status`.
 
 ---
 
@@ -61,4 +61,3 @@ If the database is lost, running `cova apply` followed by manually removing any 
 [configuration]: ./configuration.md
 [workspaces]: ./workspaces.md
 [consuming-remove]: ./consuming.md#removing-a-coven
-[status]: #what-state-enables

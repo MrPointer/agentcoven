@@ -70,6 +70,61 @@ For each removed subscription, cova:
 
 The [workspace][workspaces] clone is not deleted — it's cache, shared across subscriptions, and harmless to keep. If no subscriptions reference the repository, the workspace persists until the user clears the cache directory.
 
+---
+
+## Status
+
+`cova status` shows a snapshot of what's currently subscribed and applied. No network operations — it reads from [config][configuration] and [state][state-tracking] only.
+
+### Default Output
+
+```
+Subscriptions:
+  platform-team   github.com/acme/coven-blocks  teams/platform  @ main
+  frontend-team   github.com/acme/coven-blocks  teams/frontend  @ v2.1.0
+
+Applied: 12 blocks (8 skills, 3 rules, 1 agent)
+Frameworks: claude-code, cursor
+```
+
+The default view answers the most common question: what am I subscribed to, and how many blocks do I have?
+
+### Verbose Output
+
+`cova status -v` lists every applied block, grouped by subscription and block type:
+
+```
+Subscriptions:
+  platform-team   github.com/acme/coven-blocks  teams/platform  @ main
+  frontend-team   github.com/acme/coven-blocks  teams/frontend  @ v2.1.0
+
+platform-team (7 blocks):
+  skills:
+    acme-platform-code-review
+    acme-platform-testing
+    acme-platform-go-patterns
+  rules:
+    acme-platform-go-conventions
+    acme-platform-error-handling
+  agents:
+    acme-platform-reviewer
+    acme-platform-debugger
+
+frontend-team (5 blocks):
+  skills:
+    acme-frontend-component-patterns
+    acme-frontend-accessibility
+  rules:
+    acme-frontend-css-conventions
+    acme-frontend-react-patterns
+  agents:
+    acme-frontend-designer
+
+Frameworks: claude-code, cursor
+```
+
+Blocks are listed by name, not by file path. The grouping order — subscription then block type — matches how users think about their covens: "what did I get from the platform team?"
+
 <!-- Reference Links -->
 [subscriptions]: ../spec.md#subscriptions
 [naming]: ../spec.md#naming-convention
