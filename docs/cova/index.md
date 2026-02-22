@@ -4,13 +4,15 @@ cova is the reference implementation of the [AgentCoven specification][spec]. It
 
 Think of it like chezmoi for AI building blocks: a declarative source state in git, an applied target state on disk, and a CLI that reconciles between them.
 
-## At a Glance
+## Application
 
-| Concern | Summary | Details |
-|---------|---------|---------|
-| **Configuration** | Subscriptions + framework targets in `~/.coven/config.yaml` | [Below][configuration] |
-| **Application** | Flattens blocks into framework-expected directories with namespaced file names | [Application][application] |
-| **Adapters** | Pluggable framework support (Claude Code, Cursor, etc.) | [Adapters][adapters] |
+cova reconciles the user's local filesystem with the desired state derived from their subscriptions. Blocks in the coven repository are already [namespaced][naming] — application copies them to the appropriate framework locations and tracks what it manages. See [Application][application] for the full mechanics.
+
+---
+
+## Adapters
+
+Framework-specific translation is handled by pluggable adapters. Each adapter maps block types to the locations and formats a specific agent framework expects. See [Adapters][adapters] for supported frameworks and how to add new ones.
 
 ---
 
@@ -45,6 +47,7 @@ Every entry in `frameworks` must match a known [adapter][adapters]. cova validat
 
 <!-- Reference Links -->
 [spec]: ../spec.md
+[naming]: ../spec.md#naming-convention
 [local-config]: ../spec.md#local-configuration
 [subscriptions]: ../spec.md#subscriptions
 [configuration]: #configuration

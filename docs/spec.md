@@ -7,8 +7,27 @@ This document defines how coven repositories are structured, what goes in a mani
 - **Git is the backbone.** No custom registries, no proprietary storage. The git provider handles RBAC, compliance, and review workflows.
 - **Vendor-agnostic.** Blocks are stored in a single, standard format. Implementations handle translation to each framework's expectations during application.
 - **User sovereignty.** Implementations must never touch files they don't manage.
+- **Standards-compliant.** Well-known block types follow their respective specifications (e.g., skills follow the [Agent Skills specification][agent-skills-spec]).
 - **Extensible taxonomy.** Well-known block types are first-class, but teams can define their own.
 - **No premature abstraction.** A block is its file(s). No mandatory metadata sidecars.
+
+---
+
+## Naming Convention
+
+Blocks in a coven repository are namespaced to ensure coexistence when applied alongside blocks from other teams, organizations, or the user's own collection.
+
+Block names follow the pattern:
+
+```
+{prefix}-{team}-{block-name}
+```
+
+For example, a skill named `code-review` owned by the `platform` team in the `acme` organization becomes `acme-platform-code-review`.
+
+The `prefix` and `team` segments are derived from the [manifest][manifest]. Both must be lowercase alphanumeric strings with no hyphens, ensuring the combined name is unambiguous and compliant with standards such as the [Agent Skills specification][agent-skills-spec].
+
+Implementations should handle this namespacing during submission (when a block is added to the coven), not during application. This keeps the coven repository as the source of truth and makes application a straightforward copy.
 
 ---
 
@@ -23,19 +42,16 @@ The most common case: a single team with one coven at the repository root:
 ```
 manifest.yaml
 skills/
-  code-review/
-    skill.md
-  testing/
-    skill.md
+  acme-platform-code-review/
+    SKILL.md
+  acme-platform-testing/
+    SKILL.md
 agents/
-  reviewer/
+  acme-platform-reviewer/
     agent.md
 rules/
-  go-conventions/
+  acme-platform-go-conventions/
     rule.md
-mcp/
-  internal-api/
-    config.json
 ```
 
 ### Monorepo
@@ -48,18 +64,18 @@ teams/
   platform/
     manifest.yaml
     skills/
-      deployment/
-        skill.md
+      acme-platform-deployment/
+        SKILL.md
     agents/
-      oncall-helper/
+      acme-platform-oncall-helper/
         agent.md
   frontend/
     manifest.yaml
     skills/
-      component-patterns/
-        skill.md
+      acme-frontend-component-patterns/
+        SKILL.md
     rules/
-      accessibility/
+      acme-frontend-accessibility/
         rule.md
 ```
 
@@ -81,7 +97,7 @@ prefix: acme
 | Field    | Required | Description                                                                                |
 |----------|----------|--------------------------------------------------------------------------------------------|
 | `org`    | Yes      | Organization name. Identifies the organization that owns the repository.                   |
-| `prefix` | Yes      | Prefix used when flattening blocks to the target filesystem. Must be unique per user across all their subscriptions. |
+| `prefix` | Yes      | First segment of namespaced block names. Lowercase alphanumeric only, no hyphens. Must be unique per user across all their subscriptions. |
 
 For single-team repositories, the organization may be the team itself.
 
@@ -95,7 +111,7 @@ team: platform
 
 | Field  | Required | Description                                                          |
 |--------|----------|----------------------------------------------------------------------|
-| `team` | Yes      | Team name. Used as the second segment in the flattened file name.    |
+| `team` | Yes      | Team name. Second segment of namespaced block names. Lowercase alphanumeric only, no hyphens. |
 
 In a [single-team repository][single-team], the team segment is derived from the subscription's `name` field in the user's [local configuration][local-config].
 
@@ -105,26 +121,29 @@ In a [single-team repository][single-team], the team segment is derived from the
 
 ### Well-known Types
 
-| Type       | Directory  | Description                                                    |
-|------------|------------|----------------------------------------------------------------|
-| **Skills** | `skills/`  | Callable capabilities the agent can invoke when relevant.      |
-| **Rules**  | `rules/`   | Persistent context and instructions that shape agent behavior. |
-| **Agents** | `agents/`  | Subagent definitions with specialized roles and tool access.   |
-| **MCP**    | `mcp/`     | MCP server configurations.                                     |
+| Type       | Directory  | Description                                                    | Standard                              |
+|------------|------------|----------------------------------------------------------------|---------------------------------------|
+| **Skills** | `skills/`  | Callable capabilities the agent can invoke when relevant.      | [Agent Skills spec][agent-skills-spec] |
+| **Rules**  | `rules/`   | Persistent context and instructions that shape agent behavior. | —                                     |
+| **Agents** | `agents/`  | Subagent definitions with specialized roles and tool access.   | —                                     |
 
 ### Custom Types
 
-Any directory at the block-type level that is not a well-known type is treated as a custom block type. Implementations should handle custom types with basic operations (copy/flatten) without framework-specific transformation.
+Any directory at the block-type level that is not a well-known type is treated as a custom block type. Implementations should handle custom types with basic operations (copy) without framework-specific transformation.
 
 ### Block Structure
 
-Each block is a subdirectory within its type directory. The directory name is the block name. The directory contains the block's file(s) in a single, standard format — framework-specific translation happens during [application][cova].
+Each block is a subdirectory within its type directory. The directory name is the block's [namespaced name][naming]. The directory contains the block's file(s) in the format required by the relevant standard.
+
+For skills, this means following the [Agent Skills specification][agent-skills-spec]:
 
 ```
 skills/
-  code-review/       # block name: "code-review"
-    skill.md         # the block's content
+  acme-platform-code-review/    # namespaced block name
+    SKILL.md                    # required by Agent Skills spec
 ```
+
+The `name` field in `SKILL.md` frontmatter must match the directory name.
 
 Blocks are framework-agnostic. A skill is a skill regardless of whether the user runs Claude Code, Cursor, or any other agent framework.
 
@@ -166,11 +185,9 @@ Implementations may extend this configuration with additional fields (e.g., fram
 
 ## Multi-team and Multi-org
 
-Users subscribe to teams, not organizations. A user can subscribe to any number of teams across any number of repositories. Each subscription produces files with distinct `{prefix}--{team}--` prefixes during [application][cova], so they coexist without collision.
+Users subscribe to teams, not organizations. A user can subscribe to any number of teams across any number of repositories. Each subscription's blocks carry distinct `{prefix}-{team}-` prefixes in their names, so they coexist without collision.
 
-Within an organization, if two teams ship a block with the same name, the flattened names differ because the team segment differs. Across organizations, conflicts are impossible by design — different organizations have different [prefixes][manifest].
-
-A true conflict requires two subscriptions pointing at the same team with the same block name. Implementations must detect and flag this.
+Within an organization, blocks from different teams are distinguished by the team segment. Across organizations, blocks are distinguished by the prefix. A true conflict requires two subscriptions to contain a block with the same full namespaced name. Implementations must detect and flag this.
 
 ### Example
 
@@ -178,10 +195,14 @@ A user subscribed to two teams from Acme and one from Contoso sees blocks applie
 
 ```
 ~/.agents/skills/
-  writing-go-code.md                         # user's own — untouched
-  acme--platform--deployment.md              # from acme/platform
-  acme--frontend--component-patterns.md      # from acme/frontend
-  contoso--devex--ci-pipeline.md             # from contoso/devex
+  writing-go-code/                         # user's own — untouched
+    SKILL.md
+  acme-platform-deployment/                # from acme/platform
+    SKILL.md
+  acme-frontend-component-patterns/        # from acme/frontend
+    SKILL.md
+  contoso-devex-ci-pipeline/               # from contoso/devex
+    SKILL.md
 ```
 
 <!-- Reference Links -->
@@ -192,3 +213,5 @@ A user subscribed to two teams from Acme and one from Contoso sees blocks applie
 [monorepo]: #monorepo
 [single-team]: #single-team-repository
 [local-config]: #local-configuration
+[naming]: #naming-convention
+[agent-skills-spec]: https://agentskills.io/specification

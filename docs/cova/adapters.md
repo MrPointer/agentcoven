@@ -10,10 +10,10 @@ Each supported agent framework has an adapter that handles the specifics of appl
 
 ## Known Adapters
 
-| Framework       | Skills              | Rules               | Agents              | MCP                        |
-|-----------------|---------------------|---------------------|---------------------|----------------------------|
-| **Claude Code** | `~/.claude/skills/` | TBD                 | `~/.claude/agents/` | `~/.claude/settings.json`  |
-| **Cursor**      | TBD                 | `.cursor/rules/`    | TBD                 | `.cursor/mcp.json`         |
+| Framework       | Skills              | Rules               | Agents              |
+|-----------------|---------------------|---------------------|---------------------|
+| **Claude Code** | `~/.claude/skills/` | TBD                 | `~/.claude/agents/` |
+| **Cursor**      | TBD                 | `.cursor/rules/`    | TBD                 |
 
 Where cross-framework standards exist (e.g., `~/.agents/skills/`), cova should prefer them over framework-specific paths to reduce adapter complexity.
 
@@ -25,10 +25,8 @@ Adapters implement a common interface. At minimum, an adapter must:
 
 - Map each [well-known block type][block-types] to a target directory.
 - Transform block content from canonical format to the framework's expected format.
-- Support the [flattening naming convention][naming].
 
 The adapter interface will be defined in detail when CLI implementation begins.
 
 <!-- Reference Links -->
 [block-types]: ../spec.md#block-types
-[naming]: ./application.md#naming-convention

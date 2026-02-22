@@ -4,47 +4,29 @@
 
 ---
 
-## Flattening
+## How Apply Works
 
-Agent frameworks typically expect blocks as flat files in a specific directory (e.g., `~/.agents/skills/`). cova flattens the coven's nested directory structure into this format.
+Blocks in a coven repository are already [namespaced][naming] and standards-compliant. Application copies them from the repository to the target locations expected by the user's agent framework(s), using the appropriate [adapter][adapters].
 
-A block at `skills/code-review/skill.md` in a coven with prefix `acme` and team `platform` becomes a single file in the framework's target directory.
+For example, a skill at `skills/acme-platform-code-review/SKILL.md` in the coven repository is copied to `~/.agents/skills/acme-platform-code-review/SKILL.md` (or the equivalent path for the target framework).
 
-## Naming Convention
-
-Flattened files follow the pattern:
-
-```
-{prefix}--{team}--{block-name}.{ext}
-```
-
-For example:
-
-- `acme--platform--code-review.md`
-- `acme--frontend--component-patterns.md`
-- `contoso--devex--ci-pipeline.md`
-
-For [single-team repositories][single-team], the team segment comes from the subscription's `name` field.
-
-This convention prevents collisions with the user's own blocks (no org prefix), between teams (different team segments), and between orgs (different prefixes). It's also self-describing — `ls` on the target directory immediately shows where each block came from.
+No renaming or content rewriting occurs during application. The coven repository is the source of truth.
 
 ## Scoping
 
-cova only manages files that match the `{prefix}--` pattern for its known subscriptions. It will never create, modify, or delete files outside this pattern. The user's own blocks are untouched.
+cova tracks which blocks it manages via [state tracking][state-tracking]. It will never create, modify, or delete blocks outside its managed set. The user's own blocks are untouched.
 
 ---
 
-## Overlap and Conflict Detection
+## Conflict Detection
 
-### Overlap with User Blocks
+### Conflict with User Blocks
 
-During `apply`, if a coven block shares a name with one of the user's existing blocks (e.g., both `writing-go-code.md` and `acme--platform--writing-go-code.md` exist in the same directory), cova surfaces an informational notice. Both files remain — semantic reconciliation is the user's responsibility, not cova's.
+During `apply`, if a coven block has the same name as one of the user's existing blocks, cova flags the conflict and requires the user to resolve it before proceeding.
 
 ### Conflict Between Subscriptions
 
-If two subscriptions produce a block with the same flattened file name, cova flags a conflict and halts application for that block until the user resolves it. In practice, this is rare — it requires two subscriptions pointing to the same team with the same block name.
-
-Cross-org conflicts are impossible by design (different [prefixes][manifest]).
+If two subscriptions contain a block with the same namespaced name, cova flags a conflict and halts application for that block until the user resolves it. In practice, this is rare — it requires two subscriptions to ship an identically named block.
 
 ---
 
@@ -54,15 +36,15 @@ cova maintains applied state at `~/.coven/state.yaml`:
 
 ```yaml
 applied:
-  - path: ~/.agents/skills/acme--platform--code-review.md
+  - path: ~/.agents/skills/acme-platform-code-review/SKILL.md
     subscription: platform-team
-    source: skills/code-review/skill.md
+    source: skills/acme-platform-code-review/SKILL.md
     checksum: sha256:a1b2c3...
     applied_at: 2026-02-21T12:00:00Z
 
-  - path: ~/.agents/skills/acme--frontend--component-patterns.md
+  - path: ~/.agents/skills/acme-frontend-component-patterns/SKILL.md
     subscription: frontend-team
-    source: skills/component-patterns/skill.md
+    source: skills/acme-frontend-component-patterns/SKILL.md
     checksum: sha256:d4e5f6...
     applied_at: 2026-02-21T12:00:00Z
 ```
@@ -75,6 +57,8 @@ This enables:
 
 <!-- Reference Links -->
 [subscriptions]: ../spec.md#subscriptions
-[single-team]: ../spec.md#single-team-repository
+[naming]: ../spec.md#naming-convention
 [manifest]: ../spec.md#root-manifest
 [configuration]: ./index.md#configuration
+[adapters]: ./adapters.md
+[state-tracking]: #state-tracking

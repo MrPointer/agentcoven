@@ -1,6 +1,6 @@
 # AgentCoven
 
-AgentCoven is **agentic AI blocks as code** — a specification for managing shared AI building blocks (skills, agents, rules, MCP configurations) through git repositories.
+AgentCoven is **agentic AI blocks as code** — a specification for managing shared AI building blocks (skills, agents, rules, and more) through git repositories.
 
 ## Problem
 
@@ -12,11 +12,11 @@ AgentCoven leverages git as the backbone. Blocks are stored in a repository, cha
 
 ## How It Works
 
-1. A team creates a **coven repository** — a git repository structured according to the [AgentCoven specification][spec]. It contains the team's shared blocks: skills, agents, rules, MCP configurations, and any custom types. Organizations with multiple teams may use a single repository with a [monorepo][monorepo] layout.
+1. A team creates a **coven repository** — a git repository structured according to the [AgentCoven specification][spec]. It contains the team's shared blocks: skills, agents, rules, and any custom types. Organizations with multiple teams may use a single repository with a [monorepo][monorepo] layout.
 2. Users **subscribe** to one or more teams via a [local configuration file][local-config].
 3. A compliant implementation **applies** blocks from subscribed teams to the user's local filesystem, translating them to the format expected by their agent framework.
 
-The user's own blocks are never touched. Multiple teams and even multiple organizations coexist through prefix-based namespacing.
+Blocks are [namespaced][naming] to ensure coexistence across teams and organizations. The user's own blocks are never touched.
 
 ## Documentation
 
@@ -28,3 +28,4 @@ The user's own blocks are never touched. Multiple teams and even multiple organi
 [cova]: ./cova/index.md
 [local-config]: ./spec.md#local-configuration
 [monorepo]: ./spec.md#monorepo
+[naming]: ./spec.md#naming-convention
