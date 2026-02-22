@@ -26,9 +26,17 @@ Workspaces are keyed by repository URL, not by subscription. When multiple subsc
 
 ## How Commands Use Workspaces
 
+### Add
+
+[`cova add`][consuming-add] clones the workspace on first use if no existing workspace exists for the repository. If another subscription already references the same repo, the existing workspace is reused.
+
+### Update
+
+[`cova update`][consuming-update] fetches from the remote into the workspace before re-applying. This brings all refs up to date in a single fetch.
+
 ### Apply
 
-[Application][application] reads from the workspace at each subscription's `ref`. Different subscriptions to the same repository can track different refs — cova reads from each ref independently without requiring a checkout. The workspace clone has all refs available locally after a fetch.
+[Application][consuming-apply] reads from the workspace at each subscription's `ref`. Different subscriptions to the same repository can track different refs — cova reads from each ref independently without requiring a checkout. The workspace clone has all refs available locally after a fetch.
 
 ### Package
 
@@ -38,6 +46,10 @@ Workspaces are keyed by repository URL, not by subscription. When multiple subsc
 
 [Contribution][contributing] applies the patch to the workspace on a fresh branch from the default branch, commits, and pushes. The workspace is returned to a clean state after the operation completes.
 
+### Remove
+
+[`cova remove`][consuming-remove] does not touch the workspace. Applied files are deleted based on [state tracking][state-tracking], not by reversing the workspace. The workspace persists as cache even if all subscriptions to its repository are removed.
+
 ---
 
 ## Lifecycle
@@ -45,8 +57,12 @@ Workspaces are keyed by repository URL, not by subscription. When multiple subsc
 cova creates workspaces on first use (initial clone) and updates them as needed (fetch before apply or contribute). Workspaces are not cleaned up automatically — they persist in the cache for fast subsequent operations. Users can safely delete the entire cache directory to reclaim space; cova will re-clone on next use.
 
 <!-- Reference Links -->
-[application]: ./application.md
+[consuming-add]: ./consuming.md#adding-a-coven
+[consuming-update]: ./consuming.md#updating
+[consuming-apply]: ./consuming.md#applying
+[consuming-remove]: ./consuming.md#removing-a-coven
 [contributing]: ./contributing.md#git-operations
 [packaging]: ./contributing.md#packaging
 [conflicts]: ./contributing.md#conflict-detection
 [monorepo]: ../spec.md#monorepo
+[state-tracking]: ./state.md

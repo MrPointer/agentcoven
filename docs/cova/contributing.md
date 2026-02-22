@@ -72,6 +72,5 @@ If no provider CLI is detected, cova prints a URL the user can open to create th
 [naming]: ../spec.md#naming-convention
 [manifest]: ../spec.md#root-manifest
 [agent-skills-spec]: https://agentskills.io/specification
-[state-tracking]: ./application.md#state-tracking
-[application]: ./application.md
+[state-tracking]: ./state.md
 [workspaces]: ./workspaces.md

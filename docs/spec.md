@@ -151,7 +151,7 @@ Blocks are framework-agnostic. A skill is a skill regardless of whether the user
 
 ## Local Configuration
 
-The user's local configuration lives at `~/.coven/config.yaml`. This file is managed by the user (or by the implementation's CLI), not stored in the coven repository.
+The user's local configuration lives at `$XDG_CONFIG_HOME/cova/config.yaml` (defaulting to `~/.config/cova/config.yaml`). This file is managed by the user (or by the implementation's CLI), not stored in the coven repository.
 
 ```yaml
 subscriptions:
@@ -207,7 +207,7 @@ A user subscribed to two teams from Acme and one from Contoso sees blocks applie
 
 <!-- Reference Links -->
 [cova]: ./cova/index.md
-[cova-config]: ./cova/index.md#configuration
+[cova-config]: ./cova/configuration.md
 [manifest]: #root-manifest
 [team-manifest]: #team-manifest
 [monorepo]: #monorepo
