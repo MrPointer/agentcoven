@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["results"],
+  "properties": {
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "error"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Namespaced block name matching the input."
+          },
+          "error": {
+            "type": ["string", "null"],
+            "description": "Error message if cleanup failed. Null on success."
+          }
+        }
+      }
+    }
+  }
+}

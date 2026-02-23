@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["operation", "subscription", "manifest", "blocks"],
+  "properties": {
+    "operation": {
+      "const": "remove"
+    },
+    "subscription": {
+      "type": "string",
+      "description": "Name of the subscription being removed."
+    },
+    "manifest": {
+      "type": "object",
+      "required": ["org", "prefix", "team"],
+      "properties": {
+        "org": { "type": "string" },
+        "prefix": { "type": "string" },
+        "team": { "type": "string" }
+      }
+    },
+    "blocks": {
+      "type": "object",
+      "description": "Blocks grouped by type. Keys are block type names.",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/block"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "block": {
+      "type": "object",
+      "required": ["name", "paths"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Namespaced block name."
+        },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Absolute paths of files that cova will delete for this block."
+        }
+      }
+    }
+  }
+}

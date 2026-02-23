@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["results"],
+  "properties": {
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/result"
+      }
+    }
+  },
+  "$defs": {
+    "result": {
+      "type": "object",
+      "required": ["name", "error"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Namespaced block name matching the input."
+        },
+        "placements": {
+          "type": ["array", "null"],
+          "items": {
+            "$ref": "#/$defs/placement"
+          },
+          "description": "Where to place this block. Null if error."
+        },
+        "error": {
+          "type": ["string", "null"],
+          "description": "Error message if the block could not be processed. Null on success."
+        }
+      }
+    },
+    "placement": {
+      "type": "object",
+      "required": ["path", "source"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute target path where the file should be written."
+        },
+        "source": {
+          "type": "string",
+          "description": "Source file path relative to the workspace root."
+        }
+      }
+    }
+  }
+}

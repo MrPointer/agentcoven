@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["operation", "subscription", "workspace", "manifest", "blocks"],
+  "properties": {
+    "operation": {
+      "const": "apply"
+    },
+    "subscription": {
+      "type": "string",
+      "description": "Name of the subscription being applied."
+    },
+    "workspace": {
+      "type": "string",
+      "description": "Absolute path to the workspace root for this subscription's repository."
+    },
+    "manifest": {
+      "$ref": "#/$defs/manifest"
+    },
+    "blocks": {
+      "type": "object",
+      "description": "Blocks grouped by type. Keys are block type names.",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/block"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "manifest": {
+      "type": "object",
+      "required": ["org", "prefix", "team"],
+      "properties": {
+        "org": {
+          "type": "string",
+          "description": "Organization name from the coven manifest."
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Naming prefix from the coven manifest."
+        },
+        "team": {
+          "type": "string",
+          "description": "Team name from the coven or subscription."
+        }
+      }
+    },
+    "block": {
+      "type": "object",
+      "required": ["name", "source"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Namespaced block name."
+        },
+        "source": {
+          "type": "string",
+          "description": "Path of the block directory relative to the subscription's coven root."
+        }
+      }
+    }
+  }
+}
