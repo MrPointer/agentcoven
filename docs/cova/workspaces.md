@@ -1,6 +1,6 @@
 # Workspaces
 
-A workspace is a local clone of a coven repository. cova uses workspaces as a read-only local mirror of the remote state — for reading blocks during [application][application], for producing patch files during [packaging][packaging], and for applying those patches during [contribution][contributing].
+A workspace is a local clone of a coven repository. cova uses workspaces as a read-only local mirror of the remote state — for reading blocks during [application][consuming-apply], for producing patch files during [packaging][packaging], and for applying those patches during [contribution][contributing].
 
 ---
 

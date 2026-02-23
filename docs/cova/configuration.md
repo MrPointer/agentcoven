@@ -1,6 +1,6 @@
 # Configuration
 
-cova extends the spec's [local configuration][local-config] with implementation-specific fields. The config file lives at `$XDG_CONFIG_HOME/cova/config.yaml` (defaulting to `~/.config/cova/config.yaml`).
+cova extends the [client specification's][local-config] configuration model with implementation-specific fields. The config file lives at `$XDG_CONFIG_HOME/cova/config.yaml` (defaulting to `~/.config/cova/config.yaml`).
 
 This file is user-authored — edited directly or managed by commands like [`cova add`][consuming-add] and [`cova remove`][consuming-remove].
 
@@ -25,7 +25,7 @@ frameworks:
   - cursor
 ```
 
-The `subscriptions` section follows the [spec][subscriptions].
+The `subscriptions` section follows the [client specification][subscriptions].
 
 ---
 
@@ -38,8 +38,8 @@ The `subscriptions` section follows the [spec][subscriptions].
 Every entry in `frameworks` must match a known [adapter][adapters]. cova validates this list before applying and rejects unknown identifiers with a clear error — no partial application, no guessing.
 
 <!-- Reference Links -->
-[local-config]: ../spec.md#local-configuration
-[subscriptions]: ../spec.md#subscriptions
+[local-config]: ../client-spec.md#local-configuration
+[subscriptions]: ../client-spec.md#subscriptions
 [adapters]: ./adapters.md
 [consuming-add]: ./consuming.md#adding-a-coven
 [consuming-remove]: ./consuming.md#removing-a-coven

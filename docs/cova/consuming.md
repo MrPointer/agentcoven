@@ -126,7 +126,7 @@ Frameworks: claude-code, cursor
 Blocks are listed by name, not by file path. The grouping order — subscription then block type — matches how users think about their covens: "what did I get from the platform team?"
 
 <!-- Reference Links -->
-[subscriptions]: ../spec.md#subscriptions
+[subscriptions]: ../client-spec.md#subscriptions
 [naming]: ../spec.md#naming-convention
 [manifest]: ../spec.md#root-manifest
 [monorepo]: ../spec.md#monorepo

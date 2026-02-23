@@ -1,6 +1,6 @@
 # cova
 
-cova is the reference implementation of the [AgentCoven specification][spec]. It's a CLI tool written in Go that applies blocks from coven repositories to the user's local filesystem, translating them to the format expected by whatever agent framework the user runs.
+cova is the reference implementation of the [client specification][client-spec]. It's a CLI tool written in Go that applies blocks from coven repositories to the user's local filesystem, translating them to the format expected by whatever agent framework the user runs.
 
 Think of it like chezmoi for AI building blocks: a declarative source state in git, an applied target state on disk, and a CLI that reconciles between them.
 
@@ -35,7 +35,7 @@ The user's subscriptions and framework preferences live in a YAML config file un
 cova tracks every file it manages in a local SQLite database under `$XDG_DATA_HOME`. State enables scoping (never touch the user's own files), drift detection, and clean removal. See [State][state] for the schema and storage details.
 
 <!-- Reference Links -->
-[spec]: ../spec.md
+[client-spec]: ../client-spec.md
 [consuming]: ./consuming.md
 [contributing]: ./contributing.md
 [workspaces]: ./workspaces.md

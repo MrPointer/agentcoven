@@ -1,6 +1,6 @@
 # Specification
 
-This document defines how coven repositories are structured, what goes in a manifest, how blocks are organized, and how users configure their subscriptions. It is the contract that any [compliant implementation][cova] must follow.
+This document defines how coven repositories are structured, what goes in a manifest, and how blocks are organized. It is the contract that coven maintainers must follow. For the client-side contract (application, adapters, configuration), see the [client specification][client-spec].
 
 ## Design Principles
 
@@ -149,40 +149,6 @@ Blocks are framework-agnostic. A skill is a skill regardless of whether the user
 
 ---
 
-## Local Configuration
-
-The user's local configuration lives at `$XDG_CONFIG_HOME/cova/config.yaml` (defaulting to `~/.config/cova/config.yaml`). This file is managed by the user (or by the implementation's CLI), not stored in the coven repository.
-
-```yaml
-subscriptions:
-  - name: platform-team
-    repo: github.com/acme/coven-blocks
-    path: teams/platform
-    ref: main
-
-  - name: frontend-team
-    repo: github.com/acme/coven-blocks
-    path: teams/frontend
-    ref: v2.1.0
-
-  - name: devex
-    repo: github.com/contoso/ai-blocks
-    ref: main
-```
-
-### Subscriptions
-
-| Field  | Required | Description                                                                      |
-|--------|----------|----------------------------------------------------------------------------------|
-| `name` | Yes      | Local name for this subscription. Used as the team segment for [single-team repos][single-team]. |
-| `repo` | Yes      | Repository URL.                                                                  |
-| `path` | No       | Path within the repo to the coven root. Used for [monorepos][monorepo].          |
-| `ref`  | No       | Git ref to track (branch, tag, commit). Defaults to the repo's default branch.   |
-
-Implementations may extend this configuration with additional fields (e.g., framework targets). See [cova's configuration][cova-config] for an example.
-
----
-
 ## Multi-team and Multi-org
 
 Users subscribe to teams, not organizations. A user can subscribe to any number of teams across any number of repositories. Each subscription's blocks carry distinct `{prefix}-{team}-` prefixes in their names, so they coexist without collision.
@@ -207,10 +173,11 @@ A user subscribed to two teams from Acme and one from Contoso sees blocks applie
 
 <!-- Reference Links -->
 [cova]: ./cova/index.md
+[client-spec]: ./client-spec.md
 [manifest]: #root-manifest
 [team-manifest]: #team-manifest
 [monorepo]: #monorepo
 [single-team]: #single-team-repository
-[local-config]: #local-configuration
+[local-config]: ./client-spec.md#subscriptions
 [naming]: #naming-convention
 [agent-skills-spec]: https://agentskills.io/specification
