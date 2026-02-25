@@ -5,7 +5,7 @@ This document defines how coven repositories are structured, what goes in a mani
 ## Design Principles
 
 - **Git is the backbone.** No custom registries, no proprietary storage. The git provider handles RBAC, compliance, and review workflows.
-- **Vendor-agnostic.** Blocks are stored in a single, standard format. Implementations handle translation to each framework's expectations during application.
+- **Vendor-agnostic by default.** Blocks are assumed portable across frameworks. When framework-specific content is unavoidable, [variants][framework-variants] allow targeted authoring without affecting other frameworks.
 - **User sovereignty.** Implementations must never touch files they don't manage.
 - **Standards-compliant.** Well-known block types follow their respective specifications (e.g., skills follow the [Agent Skills specification][agent-skills-spec]).
 - **Extensible taxonomy.** Well-known block types are first-class, but teams can define their own.
@@ -145,7 +145,29 @@ skills/
 
 The `name` field in `SKILL.md` frontmatter must match the directory name.
 
-Blocks are framework-agnostic. A skill is a skill regardless of whether the user runs Claude Code, Cursor, or any other agent framework.
+#### Framework Variants
+
+By default, blocks are **framework-agnostic** — they are assumed to work with any agent framework. This is the common case and requires no special structure.
+
+When a block's content is incompatible across frameworks (e.g., frontmatter fields with conflicting semantics), the block may contain **framework-specific variants**. Each variant is a subdirectory named after the target adapter:
+
+```
+skills/
+  acme-platform-code-review/
+    SKILL.md                    # framework-agnostic (default)
+
+  acme-platform-deploy-pipeline/
+    claude-code/
+      SKILL.md                  # Claude Code variant
+    opencode/
+      SKILL.md                  # OpenCode variant
+```
+
+The variant directory name must match the name of the [adapter][adapter-protocol] that will consume it. This is how the client resolves which variant to use.
+
+A block may have a mix of a root (framework-agnostic) version and framework-specific variants. It may also have only variants and no root version. The resolution order is defined in the [client specification][client-spec].
+
+Framework-specific variants are **not portable**. A variant authored for one adapter cannot be applied by a different adapter. This is by design — the variant exists precisely because the block's content is not framework-agnostic.
 
 ---
 
@@ -180,4 +202,6 @@ A user subscribed to two teams from Acme and one from Contoso sees blocks applie
 [single-team]: #single-team-repository
 [local-config]: ./client-spec.md#subscriptions
 [naming]: #naming-convention
+[framework-variants]: #framework-variants
+[adapter-protocol]: ./client-spec.md#adapter-protocol
 [agent-skills-spec]: https://agentskills.io/specification

@@ -86,7 +86,7 @@ External adapters are standalone executables named `cova-adapter-{name}` (or `{t
 
 ### Apply
 
-The client invokes the adapter once per subscription. The adapter receives the subscription's blocks grouped by type, along with the workspace path and manifest metadata.
+The client invokes the adapter once per subscription. The adapter receives the subscription's blocks grouped by type, along with the workspace path and manifest metadata. The client resolves [framework variants][framework-variants] before invocation — the `source` field in each block points to the resolved variant directory, not the block root.
 
 **Input** (stdin):
 
@@ -212,6 +212,18 @@ A `null` error indicates success. The client proceeds to delete the block files 
 - **No overlapping paths.** Two blocks cannot target the same path. The client must treat this as a conflict.
 - **Source is relative.** The `source` field in placements is relative to the subscription's workspace root. The client resolves the full path by joining `workspace` + `source`.
 
+### Framework Variant Resolution
+
+Before invoking an adapter, the client resolves each block to the correct [variant][framework-variants] for that adapter:
+
+1. If the block contains a subdirectory matching the adapter name, use that variant.
+2. Otherwise, use the block's root content (the framework-agnostic version).
+3. If the block contains only variants for other adapters and no root content, skip the block for this adapter.
+
+A framework-specific variant must only be applied by the adapter it was authored for. The client must never pass a variant authored for one adapter to a different adapter.
+
+The `source` field sent to the adapter reflects the resolved variant directory, not the block root.
+
 ### Trust Model
 
 External adapters run as local executables with the user's permissions. Clients do not sandbox them. The implicit contract:
@@ -239,6 +251,7 @@ The adapter protocol's JSON schemas are available as standalone files under [`sc
 [naming]: ./spec.md#naming-convention
 [monorepo]: ./spec.md#monorepo
 [single-team]: ./spec.md#single-team-repository
+[framework-variants]: ./spec.md#framework-variants
 [agent-skills-spec]: https://agentskills.io/specification
 [schemas]: ../schemas/adapter/
 [schema-apply-req]: ../schemas/adapter/apply-request.schema.json
