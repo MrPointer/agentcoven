@@ -2,5 +2,16 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "labels": ["dependencies"],
-  "postUpdateOptions": ["gomodTidy"]
+  "postUpdateOptions": ["gomodTidy"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update go install version pins in CI workflows",
+      "fileMatch": ["^\\.github/workflows/.*\\.yml$"],
+      "matchStrings": [
+        "go install (?<depName>[^@]+)@v(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "go"
+    }
+  ]
 }
