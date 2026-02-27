@@ -12,12 +12,54 @@ concurrency:
 
 permissions: {}
 
+defaults:
+  run:
+    working-directory: cova
+
 jobs:
-  ci:
-    name: CI
+  test:
+    name: Test
+    runs-on: ubuntu-latest
     permissions:
       contents: read
-    uses: FollowTheProcess/ci/.github/workflows/Go.yml@v3
-    with:
-      working-directory: cova
-      linter: golangci-lint
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: cova/go.mod
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Run Tests
+        run: gotestsum --format testdox -- -race -covermode atomic -coverprofile coverage.out ./...
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: cova/coverage.out
+          fail_ci_if_error: false
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: cova/go.mod
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          working-directory: cova

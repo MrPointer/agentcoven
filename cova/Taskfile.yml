@@ -38,8 +38,11 @@ tasks:
     env:
       # -race needs CGO (https://go.dev/doc/articles/race_detector#Requirements)
       CGO_ENABLED: 1
+    preconditions:
+      - sh: command -v gotestsum
+        msg: gotestsum not installed, run `go install gotest.tools/gotestsum@latest`
     cmds:
-      - go test -race ./... {{ .CLI_ARGS }}
+      - gotestsum --format testdox -- -race ./... {{ .CLI_ARGS }}
 
   build:
     desc: Compile the project binary
