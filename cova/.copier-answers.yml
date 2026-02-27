@@ -1,0 +1,15 @@
+# Changes here will be overwritten by Copier
+_commit: v0.54.1
+_src_path: gh:FollowTheProcess/go_copier
+author_email: timor.gruber@gmail.com
+author_name: Timor Gruber
+dependency_bot: renovate
+description: Reference CLI implementation of the AgentCoven specification
+github_url: https://github.com/MrPointer/agentcoven
+github_username: MrPointer
+license: Apache-2.0
+linter: golangci-lint
+module_path: github.com/MrPointer/agentcoven/cova
+project_name: cova
+project_slug: cova
+project_type: binary
