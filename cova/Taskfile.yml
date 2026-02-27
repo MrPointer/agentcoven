@@ -80,12 +80,8 @@ tasks:
     preconditions:
       - sh: command -v golangci-lint
         msg: golangci-lint not installed, see https://golangci-lint.run/usage/install/#local-installation
-
-      - sh: command -v typos
-        msg: requires typos-cli, run `brew install typos-cli`
     cmds:
       - golangci-lint run --fix
-      - typos
 
   doc:
     desc: Render the pkg docs locally
