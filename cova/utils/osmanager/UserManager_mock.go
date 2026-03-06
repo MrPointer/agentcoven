@@ -18,15 +18,6 @@ var _ UserManager = &MoqUserManager{}
 //
 //		// make and configure a mocked UserManager
 //		mockedUserManager := &MoqUserManager{
-//			AddUserFunc: func(username string) error {
-//				panic("mock out the AddUser method")
-//			},
-//			AddUserToGroupFunc: func(username string, group string) error {
-//				panic("mock out the AddUserToGroup method")
-//			},
-//			GetChezmoiConfigHomeFunc: func() (string, error) {
-//				panic("mock out the GetChezmoiConfigHome method")
-//			},
 //			GetConfigDirFunc: func() (string, error) {
 //				panic("mock out the GetConfigDir method")
 //			},
@@ -36,15 +27,6 @@ var _ UserManager = &MoqUserManager{}
 //			GetHomeDirFunc: func() (string, error) {
 //				panic("mock out the GetHomeDir method")
 //			},
-//			GetUserShellFunc: func(username string) (string, error) {
-//				panic("mock out the GetUserShell method")
-//			},
-//			SetUserShellFunc: func(username string, shellPath string) error {
-//				panic("mock out the SetUserShell method")
-//			},
-//			UserExistsFunc: func(username string) (bool, error) {
-//				panic("mock out the UserExists method")
-//			},
 //		}
 //
 //		// use mockedUserManager in code that requires UserManager
@@ -52,15 +34,6 @@ var _ UserManager = &MoqUserManager{}
 //
 //	}
 type MoqUserManager struct {
-	// AddUserFunc mocks the AddUser method.
-	AddUserFunc func(username string) error
-
-	// AddUserToGroupFunc mocks the AddUserToGroup method.
-	AddUserToGroupFunc func(username string, group string) error
-
-	// GetChezmoiConfigHomeFunc mocks the GetChezmoiConfigHome method.
-	GetChezmoiConfigHomeFunc func() (string, error)
-
 	// GetConfigDirFunc mocks the GetConfigDir method.
 	GetConfigDirFunc func() (string, error)
 
@@ -70,32 +43,8 @@ type MoqUserManager struct {
 	// GetHomeDirFunc mocks the GetHomeDir method.
 	GetHomeDirFunc func() (string, error)
 
-	// GetUserShellFunc mocks the GetUserShell method.
-	GetUserShellFunc func(username string) (string, error)
-
-	// SetUserShellFunc mocks the SetUserShell method.
-	SetUserShellFunc func(username string, shellPath string) error
-
-	// UserExistsFunc mocks the UserExists method.
-	UserExistsFunc func(username string) (bool, error)
-
 	// calls tracks calls to the methods.
 	calls struct {
-		// AddUser holds details about calls to the AddUser method.
-		AddUser []struct {
-			// Username is the username argument value.
-			Username string
-		}
-		// AddUserToGroup holds details about calls to the AddUserToGroup method.
-		AddUserToGroup []struct {
-			// Username is the username argument value.
-			Username string
-			// Group is the group argument value.
-			Group string
-		}
-		// GetChezmoiConfigHome holds details about calls to the GetChezmoiConfigHome method.
-		GetChezmoiConfigHome []struct {
-		}
 		// GetConfigDir holds details about calls to the GetConfigDir method.
 		GetConfigDir []struct {
 		}
@@ -105,128 +54,10 @@ type MoqUserManager struct {
 		// GetHomeDir holds details about calls to the GetHomeDir method.
 		GetHomeDir []struct {
 		}
-		// GetUserShell holds details about calls to the GetUserShell method.
-		GetUserShell []struct {
-			// Username is the username argument value.
-			Username string
-		}
-		// SetUserShell holds details about calls to the SetUserShell method.
-		SetUserShell []struct {
-			// Username is the username argument value.
-			Username string
-			// ShellPath is the shellPath argument value.
-			ShellPath string
-		}
-		// UserExists holds details about calls to the UserExists method.
-		UserExists []struct {
-			// Username is the username argument value.
-			Username string
-		}
 	}
-	lockAddUser              sync.RWMutex
-	lockAddUserToGroup       sync.RWMutex
-	lockGetChezmoiConfigHome sync.RWMutex
-	lockGetConfigDir         sync.RWMutex
-	lockGetCurrentUsername   sync.RWMutex
-	lockGetHomeDir           sync.RWMutex
-	lockGetUserShell         sync.RWMutex
-	lockSetUserShell         sync.RWMutex
-	lockUserExists           sync.RWMutex
-}
-
-// AddUser calls AddUserFunc.
-func (mock *MoqUserManager) AddUser(username string) error {
-	if mock.AddUserFunc == nil {
-		panic("MoqUserManager.AddUserFunc: method is nil but UserManager.AddUser was just called")
-	}
-	callInfo := struct {
-		Username string
-	}{
-		Username: username,
-	}
-	mock.lockAddUser.Lock()
-	mock.calls.AddUser = append(mock.calls.AddUser, callInfo)
-	mock.lockAddUser.Unlock()
-	return mock.AddUserFunc(username)
-}
-
-// AddUserCalls gets all the calls that were made to AddUser.
-// Check the length with:
-//
-//	len(mockedUserManager.AddUserCalls())
-func (mock *MoqUserManager) AddUserCalls() []struct {
-	Username string
-} {
-	var calls []struct {
-		Username string
-	}
-	mock.lockAddUser.RLock()
-	calls = mock.calls.AddUser
-	mock.lockAddUser.RUnlock()
-	return calls
-}
-
-// AddUserToGroup calls AddUserToGroupFunc.
-func (mock *MoqUserManager) AddUserToGroup(username string, group string) error {
-	if mock.AddUserToGroupFunc == nil {
-		panic("MoqUserManager.AddUserToGroupFunc: method is nil but UserManager.AddUserToGroup was just called")
-	}
-	callInfo := struct {
-		Username string
-		Group    string
-	}{
-		Username: username,
-		Group:    group,
-	}
-	mock.lockAddUserToGroup.Lock()
-	mock.calls.AddUserToGroup = append(mock.calls.AddUserToGroup, callInfo)
-	mock.lockAddUserToGroup.Unlock()
-	return mock.AddUserToGroupFunc(username, group)
-}
-
-// AddUserToGroupCalls gets all the calls that were made to AddUserToGroup.
-// Check the length with:
-//
-//	len(mockedUserManager.AddUserToGroupCalls())
-func (mock *MoqUserManager) AddUserToGroupCalls() []struct {
-	Username string
-	Group    string
-} {
-	var calls []struct {
-		Username string
-		Group    string
-	}
-	mock.lockAddUserToGroup.RLock()
-	calls = mock.calls.AddUserToGroup
-	mock.lockAddUserToGroup.RUnlock()
-	return calls
-}
-
-// GetChezmoiConfigHome calls GetChezmoiConfigHomeFunc.
-func (mock *MoqUserManager) GetChezmoiConfigHome() (string, error) {
-	if mock.GetChezmoiConfigHomeFunc == nil {
-		panic("MoqUserManager.GetChezmoiConfigHomeFunc: method is nil but UserManager.GetChezmoiConfigHome was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetChezmoiConfigHome.Lock()
-	mock.calls.GetChezmoiConfigHome = append(mock.calls.GetChezmoiConfigHome, callInfo)
-	mock.lockGetChezmoiConfigHome.Unlock()
-	return mock.GetChezmoiConfigHomeFunc()
-}
-
-// GetChezmoiConfigHomeCalls gets all the calls that were made to GetChezmoiConfigHome.
-// Check the length with:
-//
-//	len(mockedUserManager.GetChezmoiConfigHomeCalls())
-func (mock *MoqUserManager) GetChezmoiConfigHomeCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetChezmoiConfigHome.RLock()
-	calls = mock.calls.GetChezmoiConfigHome
-	mock.lockGetChezmoiConfigHome.RUnlock()
-	return calls
+	lockGetConfigDir       sync.RWMutex
+	lockGetCurrentUsername sync.RWMutex
+	lockGetHomeDir         sync.RWMutex
 }
 
 // GetConfigDir calls GetConfigDirFunc.
@@ -307,105 +138,5 @@ func (mock *MoqUserManager) GetHomeDirCalls() []struct {
 	mock.lockGetHomeDir.RLock()
 	calls = mock.calls.GetHomeDir
 	mock.lockGetHomeDir.RUnlock()
-	return calls
-}
-
-// GetUserShell calls GetUserShellFunc.
-func (mock *MoqUserManager) GetUserShell(username string) (string, error) {
-	if mock.GetUserShellFunc == nil {
-		panic("MoqUserManager.GetUserShellFunc: method is nil but UserManager.GetUserShell was just called")
-	}
-	callInfo := struct {
-		Username string
-	}{
-		Username: username,
-	}
-	mock.lockGetUserShell.Lock()
-	mock.calls.GetUserShell = append(mock.calls.GetUserShell, callInfo)
-	mock.lockGetUserShell.Unlock()
-	return mock.GetUserShellFunc(username)
-}
-
-// GetUserShellCalls gets all the calls that were made to GetUserShell.
-// Check the length with:
-//
-//	len(mockedUserManager.GetUserShellCalls())
-func (mock *MoqUserManager) GetUserShellCalls() []struct {
-	Username string
-} {
-	var calls []struct {
-		Username string
-	}
-	mock.lockGetUserShell.RLock()
-	calls = mock.calls.GetUserShell
-	mock.lockGetUserShell.RUnlock()
-	return calls
-}
-
-// SetUserShell calls SetUserShellFunc.
-func (mock *MoqUserManager) SetUserShell(username string, shellPath string) error {
-	if mock.SetUserShellFunc == nil {
-		panic("MoqUserManager.SetUserShellFunc: method is nil but UserManager.SetUserShell was just called")
-	}
-	callInfo := struct {
-		Username  string
-		ShellPath string
-	}{
-		Username:  username,
-		ShellPath: shellPath,
-	}
-	mock.lockSetUserShell.Lock()
-	mock.calls.SetUserShell = append(mock.calls.SetUserShell, callInfo)
-	mock.lockSetUserShell.Unlock()
-	return mock.SetUserShellFunc(username, shellPath)
-}
-
-// SetUserShellCalls gets all the calls that were made to SetUserShell.
-// Check the length with:
-//
-//	len(mockedUserManager.SetUserShellCalls())
-func (mock *MoqUserManager) SetUserShellCalls() []struct {
-	Username  string
-	ShellPath string
-} {
-	var calls []struct {
-		Username  string
-		ShellPath string
-	}
-	mock.lockSetUserShell.RLock()
-	calls = mock.calls.SetUserShell
-	mock.lockSetUserShell.RUnlock()
-	return calls
-}
-
-// UserExists calls UserExistsFunc.
-func (mock *MoqUserManager) UserExists(username string) (bool, error) {
-	if mock.UserExistsFunc == nil {
-		panic("MoqUserManager.UserExistsFunc: method is nil but UserManager.UserExists was just called")
-	}
-	callInfo := struct {
-		Username string
-	}{
-		Username: username,
-	}
-	mock.lockUserExists.Lock()
-	mock.calls.UserExists = append(mock.calls.UserExists, callInfo)
-	mock.lockUserExists.Unlock()
-	return mock.UserExistsFunc(username)
-}
-
-// UserExistsCalls gets all the calls that were made to UserExists.
-// Check the length with:
-//
-//	len(mockedUserManager.UserExistsCalls())
-func (mock *MoqUserManager) UserExistsCalls() []struct {
-	Username string
-} {
-	var calls []struct {
-		Username string
-	}
-	mock.lockUserExists.RLock()
-	calls = mock.calls.UserExists
-	mock.lockUserExists.RUnlock()
 	return calls
 }

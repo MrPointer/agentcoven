@@ -3,6 +3,8 @@ package utils
 import (
 	"io"
 	"os"
+
+	"github.com/MrPointer/agentcoven/cova/utils/logger"
 )
 
 type FileSystem interface {
@@ -18,19 +20,6 @@ type FileSystem interface {
 	// CreateDirectoryWithPermissions creates a directory at the specified path with the specified permissions.
 	CreateDirectoryWithPermissions(path string, mode os.FileMode) error
 
-	// RemovePath removes a file or directory at the specified path.
-	// If the path is a directory, it will be removed recursively.
-	RemovePath(path string) error
-
-	// PathExists checks if a file or directory exists at the specified path.
-	// It returns true if the path exists, false if it does not, and an error if there was an issue checking the path.
-	// This function does not distinguish between files and directories.
-	PathExists(path string) (bool, error)
-
-	// IsExecutable checks if the file at the specified path is executable.
-	// It returns true if the file exists and has any execute permission bit set.
-	IsExecutable(path string) (bool, error)
-
 	// CreateTemporaryFile creates a temporary file in the optional specified directory.
 	// dir is the directory where the temporary file will be created.
 	// If dir is nil, the system's default temporary directory will be used.
@@ -44,6 +33,19 @@ type FileSystem interface {
 	//
 	// It returns the path of the created temporary directory or an error if it fails.
 	CreateTemporaryDirectory(dir string) (string, error)
+
+	// RemovePath removes a file or directory at the specified path.
+	// If the path is a directory, it will be removed recursively.
+	RemovePath(path string) error
+
+	// PathExists checks if a file or directory exists at the specified path.
+	// It returns true if the path exists, false if it does not, and an error if there was an issue checking the path.
+	// This function does not distinguish between files and directories.
+	PathExists(path string) (bool, error)
+
+	// IsExecutable checks if the file at the specified path is executable.
+	// It returns true if the file exists and has any execute permission bit set.
+	IsExecutable(path string) (bool, error)
 
 	// WriteFile writes data to a file at the specified path.
 	// If the file does not exist, it will be created.
@@ -63,16 +65,28 @@ type FileSystem interface {
 	// ReadFileContents reads the entire contents of a file and returns it as a byte slice.
 	// This is a convenience method for small files where streaming is not needed.
 	ReadFileContents(path string) ([]byte, error)
+
+	//Rename renames (moves) a file or directory from oldPath to newPath.
+	Rename(oldPath, newPath string) error
+
+	// ReadDirectory reads the contents of a directory at the specified path.
+	//
+	// It returns a slice of os.DirEntry, which provides information about the files and directories within the specified directory.
+	ReadDirectory(path string) ([]os.DirEntry, error)
 }
 
 // DefaultFileSystem is the default implementation of the FileSystem interface using os package.
-type DefaultFileSystem struct{}
+type DefaultFileSystem struct {
+	logger logger.Logger
+}
 
 var _ FileSystem = (*DefaultFileSystem)(nil)
 
 // NewDefaultFileSystem creates a new DefaultFileSystem.
-func NewDefaultFileSystem() FileSystem {
-	return &DefaultFileSystem{}
+func NewDefaultFileSystem(logger logger.Logger) *DefaultFileSystem {
+	return &DefaultFileSystem{
+		logger: logger,
+	}
 }
 
 func (fs *DefaultFileSystem) CreateFile(path string) (string, error) {
@@ -92,23 +106,6 @@ func (fs *DefaultFileSystem) CreateDirectory(path string) error {
 
 func (fs *DefaultFileSystem) CreateDirectoryWithPermissions(path string, permissions os.FileMode) error {
 	return os.MkdirAll(path, permissions)
-}
-
-func (fs *DefaultFileSystem) RemovePath(path string) error {
-	return os.RemoveAll(path)
-}
-
-func (fs *DefaultFileSystem) PathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-
-	return false, err
 }
 
 func (fs *DefaultFileSystem) CreateTemporaryFile(dir, pattern string) (string, error) {
@@ -155,6 +152,33 @@ func (fs *DefaultFileSystem) WriteFile(path string, reader io.Reader) (int64, er
 	return bytesWritten, nil
 }
 
+func (fs *DefaultFileSystem) RemovePath(path string) error {
+	return os.RemoveAll(path)
+}
+
+func (fs *DefaultFileSystem) PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	return false, err
+}
+
+func (fs *DefaultFileSystem) IsExecutable(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	// Check if any execute bit is set
+	return info.Mode()&0111 != 0, nil
+}
+
 func (fs *DefaultFileSystem) ReadFile(path string, receiver io.Writer) (int64, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -170,16 +194,14 @@ func (fs *DefaultFileSystem) ReadFile(path string, receiver io.Writer) (int64, e
 	return bytesRead, nil
 }
 
-func (fs *DefaultFileSystem) IsExecutable(path string) (bool, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return false, err
-	}
-
-	// Check if any execute bit is set
-	return info.Mode()&0111 != 0, nil
+func (fs *DefaultFileSystem) Rename(oldPath, newPath string) error {
+	return os.Rename(oldPath, newPath)
 }
 
 func (fs *DefaultFileSystem) ReadFileContents(path string) ([]byte, error) {
 	return os.ReadFile(path)
+}
+
+func (fs *DefaultFileSystem) ReadDirectory(path string) ([]os.DirEntry, error) {
+	return os.ReadDir(path)
 }

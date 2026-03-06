@@ -41,6 +41,9 @@ var _ FileSystem = &MoqFileSystem{}
 //			PathExistsFunc: func(path string) (bool, error) {
 //				panic("mock out the PathExists method")
 //			},
+//			ReadDirectoryFunc: func(path string) ([]os.DirEntry, error) {
+//				panic("mock out the ReadDirectory method")
+//			},
 //			ReadFileFunc: func(path string, receiver io.Writer) (int64, error) {
 //				panic("mock out the ReadFile method")
 //			},
@@ -49,6 +52,9 @@ var _ FileSystem = &MoqFileSystem{}
 //			},
 //			RemovePathFunc: func(path string) error {
 //				panic("mock out the RemovePath method")
+//			},
+//			RenameFunc: func(oldPath string, newPath string) error {
+//				panic("mock out the Rename method")
 //			},
 //			WriteFileFunc: func(path string, reader io.Reader) (int64, error) {
 //				panic("mock out the WriteFile method")
@@ -81,6 +87,9 @@ type MoqFileSystem struct {
 	// PathExistsFunc mocks the PathExists method.
 	PathExistsFunc func(path string) (bool, error)
 
+	// ReadDirectoryFunc mocks the ReadDirectory method.
+	ReadDirectoryFunc func(path string) ([]os.DirEntry, error)
+
 	// ReadFileFunc mocks the ReadFile method.
 	ReadFileFunc func(path string, receiver io.Writer) (int64, error)
 
@@ -89,6 +98,9 @@ type MoqFileSystem struct {
 
 	// RemovePathFunc mocks the RemovePath method.
 	RemovePathFunc func(path string) error
+
+	// RenameFunc mocks the Rename method.
+	RenameFunc func(oldPath string, newPath string) error
 
 	// WriteFileFunc mocks the WriteFile method.
 	WriteFileFunc func(path string, reader io.Reader) (int64, error)
@@ -134,6 +146,11 @@ type MoqFileSystem struct {
 			// Path is the path argument value.
 			Path string
 		}
+		// ReadDirectory holds details about calls to the ReadDirectory method.
+		ReadDirectory []struct {
+			// Path is the path argument value.
+			Path string
+		}
 		// ReadFile holds details about calls to the ReadFile method.
 		ReadFile []struct {
 			// Path is the path argument value.
@@ -151,6 +168,13 @@ type MoqFileSystem struct {
 			// Path is the path argument value.
 			Path string
 		}
+		// Rename holds details about calls to the Rename method.
+		Rename []struct {
+			// OldPath is the oldPath argument value.
+			OldPath string
+			// NewPath is the newPath argument value.
+			NewPath string
+		}
 		// WriteFile holds details about calls to the WriteFile method.
 		WriteFile []struct {
 			// Path is the path argument value.
@@ -166,9 +190,11 @@ type MoqFileSystem struct {
 	lockCreateTemporaryFile            sync.RWMutex
 	lockIsExecutable                   sync.RWMutex
 	lockPathExists                     sync.RWMutex
+	lockReadDirectory                  sync.RWMutex
 	lockReadFile                       sync.RWMutex
 	lockReadFileContents               sync.RWMutex
 	lockRemovePath                     sync.RWMutex
+	lockRename                         sync.RWMutex
 	lockWriteFile                      sync.RWMutex
 }
 
@@ -404,6 +430,38 @@ func (mock *MoqFileSystem) PathExistsCalls() []struct {
 	return calls
 }
 
+// ReadDirectory calls ReadDirectoryFunc.
+func (mock *MoqFileSystem) ReadDirectory(path string) ([]os.DirEntry, error) {
+	if mock.ReadDirectoryFunc == nil {
+		panic("MoqFileSystem.ReadDirectoryFunc: method is nil but FileSystem.ReadDirectory was just called")
+	}
+	callInfo := struct {
+		Path string
+	}{
+		Path: path,
+	}
+	mock.lockReadDirectory.Lock()
+	mock.calls.ReadDirectory = append(mock.calls.ReadDirectory, callInfo)
+	mock.lockReadDirectory.Unlock()
+	return mock.ReadDirectoryFunc(path)
+}
+
+// ReadDirectoryCalls gets all the calls that were made to ReadDirectory.
+// Check the length with:
+//
+//	len(mockedFileSystem.ReadDirectoryCalls())
+func (mock *MoqFileSystem) ReadDirectoryCalls() []struct {
+	Path string
+} {
+	var calls []struct {
+		Path string
+	}
+	mock.lockReadDirectory.RLock()
+	calls = mock.calls.ReadDirectory
+	mock.lockReadDirectory.RUnlock()
+	return calls
+}
+
 // ReadFile calls ReadFileFunc.
 func (mock *MoqFileSystem) ReadFile(path string, receiver io.Writer) (int64, error) {
 	if mock.ReadFileFunc == nil {
@@ -501,6 +559,42 @@ func (mock *MoqFileSystem) RemovePathCalls() []struct {
 	mock.lockRemovePath.RLock()
 	calls = mock.calls.RemovePath
 	mock.lockRemovePath.RUnlock()
+	return calls
+}
+
+// Rename calls RenameFunc.
+func (mock *MoqFileSystem) Rename(oldPath string, newPath string) error {
+	if mock.RenameFunc == nil {
+		panic("MoqFileSystem.RenameFunc: method is nil but FileSystem.Rename was just called")
+	}
+	callInfo := struct {
+		OldPath string
+		NewPath string
+	}{
+		OldPath: oldPath,
+		NewPath: newPath,
+	}
+	mock.lockRename.Lock()
+	mock.calls.Rename = append(mock.calls.Rename, callInfo)
+	mock.lockRename.Unlock()
+	return mock.RenameFunc(oldPath, newPath)
+}
+
+// RenameCalls gets all the calls that were made to Rename.
+// Check the length with:
+//
+//	len(mockedFileSystem.RenameCalls())
+func (mock *MoqFileSystem) RenameCalls() []struct {
+	OldPath string
+	NewPath string
+} {
+	var calls []struct {
+		OldPath string
+		NewPath string
+	}
+	mock.lockRename.RLock()
+	calls = mock.calls.Rename
+	mock.lockRename.RUnlock()
 	return calls
 }
 

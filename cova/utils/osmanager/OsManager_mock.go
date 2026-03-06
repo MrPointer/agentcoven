@@ -5,7 +5,6 @@
 package osmanager
 
 import (
-	"os"
 	"sync"
 )
 
@@ -19,29 +18,11 @@ var _ OsManager = &MoqOsManager{}
 //
 //		// make and configure a mocked OsManager
 //		mockedOsManager := &MoqOsManager{
-//			AddSudoAccessFunc: func(username string) error {
-//				panic("mock out the AddSudoAccess method")
-//			},
-//			AddUserFunc: func(username string) error {
-//				panic("mock out the AddUser method")
-//			},
-//			AddUserToGroupFunc: func(username string, group string) error {
-//				panic("mock out the AddUserToGroup method")
-//			},
-//			EnsureShellInEtcShellsFunc: func(shellPath string) error {
-//				panic("mock out the EnsureShellInEtcShells method")
-//			},
-//			GetChezmoiConfigHomeFunc: func() (string, error) {
-//				panic("mock out the GetChezmoiConfigHome method")
-//			},
 //			GetConfigDirFunc: func() (string, error) {
 //				panic("mock out the GetConfigDir method")
 //			},
 //			GetCurrentUsernameFunc: func() (string, error) {
 //				panic("mock out the GetCurrentUsername method")
-//			},
-//			GetFileOwnerFunc: func(path string) (string, error) {
-//				panic("mock out the GetFileOwner method")
 //			},
 //			GetHomeDirFunc: func() (string, error) {
 //				panic("mock out the GetHomeDir method")
@@ -52,26 +33,11 @@ var _ OsManager = &MoqOsManager{}
 //			GetProgramVersionFunc: func(program string, versionExtractor VersionExtractor, queryArgs ...string) (string, error) {
 //				panic("mock out the GetProgramVersion method")
 //			},
-//			GetUserShellFunc: func(username string) (string, error) {
-//				panic("mock out the GetUserShell method")
-//			},
 //			GetenvFunc: func(key string) string {
 //				panic("mock out the Getenv method")
 //			},
 //			ProgramExistsFunc: func(program string) (bool, error) {
 //				panic("mock out the ProgramExists method")
-//			},
-//			SetOwnershipFunc: func(path string, username string) error {
-//				panic("mock out the SetOwnership method")
-//			},
-//			SetPermissionsFunc: func(path string, mode os.FileMode) error {
-//				panic("mock out the SetPermissions method")
-//			},
-//			SetUserShellFunc: func(username string, shellPath string) error {
-//				panic("mock out the SetUserShell method")
-//			},
-//			UserExistsFunc: func(username string) (bool, error) {
-//				panic("mock out the UserExists method")
 //			},
 //		}
 //
@@ -80,29 +46,11 @@ var _ OsManager = &MoqOsManager{}
 //
 //	}
 type MoqOsManager struct {
-	// AddSudoAccessFunc mocks the AddSudoAccess method.
-	AddSudoAccessFunc func(username string) error
-
-	// AddUserFunc mocks the AddUser method.
-	AddUserFunc func(username string) error
-
-	// AddUserToGroupFunc mocks the AddUserToGroup method.
-	AddUserToGroupFunc func(username string, group string) error
-
-	// EnsureShellInEtcShellsFunc mocks the EnsureShellInEtcShells method.
-	EnsureShellInEtcShellsFunc func(shellPath string) error
-
-	// GetChezmoiConfigHomeFunc mocks the GetChezmoiConfigHome method.
-	GetChezmoiConfigHomeFunc func() (string, error)
-
 	// GetConfigDirFunc mocks the GetConfigDir method.
 	GetConfigDirFunc func() (string, error)
 
 	// GetCurrentUsernameFunc mocks the GetCurrentUsername method.
 	GetCurrentUsernameFunc func() (string, error)
-
-	// GetFileOwnerFunc mocks the GetFileOwner method.
-	GetFileOwnerFunc func(path string) (string, error)
 
 	// GetHomeDirFunc mocks the GetHomeDir method.
 	GetHomeDirFunc func() (string, error)
@@ -113,64 +61,19 @@ type MoqOsManager struct {
 	// GetProgramVersionFunc mocks the GetProgramVersion method.
 	GetProgramVersionFunc func(program string, versionExtractor VersionExtractor, queryArgs ...string) (string, error)
 
-	// GetUserShellFunc mocks the GetUserShell method.
-	GetUserShellFunc func(username string) (string, error)
-
 	// GetenvFunc mocks the Getenv method.
 	GetenvFunc func(key string) string
 
 	// ProgramExistsFunc mocks the ProgramExists method.
 	ProgramExistsFunc func(program string) (bool, error)
 
-	// SetOwnershipFunc mocks the SetOwnership method.
-	SetOwnershipFunc func(path string, username string) error
-
-	// SetPermissionsFunc mocks the SetPermissions method.
-	SetPermissionsFunc func(path string, mode os.FileMode) error
-
-	// SetUserShellFunc mocks the SetUserShell method.
-	SetUserShellFunc func(username string, shellPath string) error
-
-	// UserExistsFunc mocks the UserExists method.
-	UserExistsFunc func(username string) (bool, error)
-
 	// calls tracks calls to the methods.
 	calls struct {
-		// AddSudoAccess holds details about calls to the AddSudoAccess method.
-		AddSudoAccess []struct {
-			// Username is the username argument value.
-			Username string
-		}
-		// AddUser holds details about calls to the AddUser method.
-		AddUser []struct {
-			// Username is the username argument value.
-			Username string
-		}
-		// AddUserToGroup holds details about calls to the AddUserToGroup method.
-		AddUserToGroup []struct {
-			// Username is the username argument value.
-			Username string
-			// Group is the group argument value.
-			Group string
-		}
-		// EnsureShellInEtcShells holds details about calls to the EnsureShellInEtcShells method.
-		EnsureShellInEtcShells []struct {
-			// ShellPath is the shellPath argument value.
-			ShellPath string
-		}
-		// GetChezmoiConfigHome holds details about calls to the GetChezmoiConfigHome method.
-		GetChezmoiConfigHome []struct {
-		}
 		// GetConfigDir holds details about calls to the GetConfigDir method.
 		GetConfigDir []struct {
 		}
 		// GetCurrentUsername holds details about calls to the GetCurrentUsername method.
 		GetCurrentUsername []struct {
-		}
-		// GetFileOwner holds details about calls to the GetFileOwner method.
-		GetFileOwner []struct {
-			// Path is the path argument value.
-			Path string
 		}
 		// GetHomeDir holds details about calls to the GetHomeDir method.
 		GetHomeDir []struct {
@@ -189,11 +92,6 @@ type MoqOsManager struct {
 			// QueryArgs is the queryArgs argument value.
 			QueryArgs []string
 		}
-		// GetUserShell holds details about calls to the GetUserShell method.
-		GetUserShell []struct {
-			// Username is the username argument value.
-			Username string
-		}
 		// Getenv holds details about calls to the Getenv method.
 		Getenv []struct {
 			// Key is the key argument value.
@@ -204,210 +102,14 @@ type MoqOsManager struct {
 			// Program is the program argument value.
 			Program string
 		}
-		// SetOwnership holds details about calls to the SetOwnership method.
-		SetOwnership []struct {
-			// Path is the path argument value.
-			Path string
-			// Username is the username argument value.
-			Username string
-		}
-		// SetPermissions holds details about calls to the SetPermissions method.
-		SetPermissions []struct {
-			// Path is the path argument value.
-			Path string
-			// Mode is the mode argument value.
-			Mode os.FileMode
-		}
-		// SetUserShell holds details about calls to the SetUserShell method.
-		SetUserShell []struct {
-			// Username is the username argument value.
-			Username string
-			// ShellPath is the shellPath argument value.
-			ShellPath string
-		}
-		// UserExists holds details about calls to the UserExists method.
-		UserExists []struct {
-			// Username is the username argument value.
-			Username string
-		}
 	}
-	lockAddSudoAccess          sync.RWMutex
-	lockAddUser                sync.RWMutex
-	lockAddUserToGroup         sync.RWMutex
-	lockEnsureShellInEtcShells sync.RWMutex
-	lockGetChezmoiConfigHome   sync.RWMutex
-	lockGetConfigDir           sync.RWMutex
-	lockGetCurrentUsername     sync.RWMutex
-	lockGetFileOwner           sync.RWMutex
-	lockGetHomeDir             sync.RWMutex
-	lockGetProgramPath         sync.RWMutex
-	lockGetProgramVersion      sync.RWMutex
-	lockGetUserShell           sync.RWMutex
-	lockGetenv                 sync.RWMutex
-	lockProgramExists          sync.RWMutex
-	lockSetOwnership           sync.RWMutex
-	lockSetPermissions         sync.RWMutex
-	lockSetUserShell           sync.RWMutex
-	lockUserExists             sync.RWMutex
-}
-
-// AddSudoAccess calls AddSudoAccessFunc.
-func (mock *MoqOsManager) AddSudoAccess(username string) error {
-	if mock.AddSudoAccessFunc == nil {
-		panic("MoqOsManager.AddSudoAccessFunc: method is nil but OsManager.AddSudoAccess was just called")
-	}
-	callInfo := struct {
-		Username string
-	}{
-		Username: username,
-	}
-	mock.lockAddSudoAccess.Lock()
-	mock.calls.AddSudoAccess = append(mock.calls.AddSudoAccess, callInfo)
-	mock.lockAddSudoAccess.Unlock()
-	return mock.AddSudoAccessFunc(username)
-}
-
-// AddSudoAccessCalls gets all the calls that were made to AddSudoAccess.
-// Check the length with:
-//
-//	len(mockedOsManager.AddSudoAccessCalls())
-func (mock *MoqOsManager) AddSudoAccessCalls() []struct {
-	Username string
-} {
-	var calls []struct {
-		Username string
-	}
-	mock.lockAddSudoAccess.RLock()
-	calls = mock.calls.AddSudoAccess
-	mock.lockAddSudoAccess.RUnlock()
-	return calls
-}
-
-// AddUser calls AddUserFunc.
-func (mock *MoqOsManager) AddUser(username string) error {
-	if mock.AddUserFunc == nil {
-		panic("MoqOsManager.AddUserFunc: method is nil but OsManager.AddUser was just called")
-	}
-	callInfo := struct {
-		Username string
-	}{
-		Username: username,
-	}
-	mock.lockAddUser.Lock()
-	mock.calls.AddUser = append(mock.calls.AddUser, callInfo)
-	mock.lockAddUser.Unlock()
-	return mock.AddUserFunc(username)
-}
-
-// AddUserCalls gets all the calls that were made to AddUser.
-// Check the length with:
-//
-//	len(mockedOsManager.AddUserCalls())
-func (mock *MoqOsManager) AddUserCalls() []struct {
-	Username string
-} {
-	var calls []struct {
-		Username string
-	}
-	mock.lockAddUser.RLock()
-	calls = mock.calls.AddUser
-	mock.lockAddUser.RUnlock()
-	return calls
-}
-
-// AddUserToGroup calls AddUserToGroupFunc.
-func (mock *MoqOsManager) AddUserToGroup(username string, group string) error {
-	if mock.AddUserToGroupFunc == nil {
-		panic("MoqOsManager.AddUserToGroupFunc: method is nil but OsManager.AddUserToGroup was just called")
-	}
-	callInfo := struct {
-		Username string
-		Group    string
-	}{
-		Username: username,
-		Group:    group,
-	}
-	mock.lockAddUserToGroup.Lock()
-	mock.calls.AddUserToGroup = append(mock.calls.AddUserToGroup, callInfo)
-	mock.lockAddUserToGroup.Unlock()
-	return mock.AddUserToGroupFunc(username, group)
-}
-
-// AddUserToGroupCalls gets all the calls that were made to AddUserToGroup.
-// Check the length with:
-//
-//	len(mockedOsManager.AddUserToGroupCalls())
-func (mock *MoqOsManager) AddUserToGroupCalls() []struct {
-	Username string
-	Group    string
-} {
-	var calls []struct {
-		Username string
-		Group    string
-	}
-	mock.lockAddUserToGroup.RLock()
-	calls = mock.calls.AddUserToGroup
-	mock.lockAddUserToGroup.RUnlock()
-	return calls
-}
-
-// EnsureShellInEtcShells calls EnsureShellInEtcShellsFunc.
-func (mock *MoqOsManager) EnsureShellInEtcShells(shellPath string) error {
-	if mock.EnsureShellInEtcShellsFunc == nil {
-		panic("MoqOsManager.EnsureShellInEtcShellsFunc: method is nil but OsManager.EnsureShellInEtcShells was just called")
-	}
-	callInfo := struct {
-		ShellPath string
-	}{
-		ShellPath: shellPath,
-	}
-	mock.lockEnsureShellInEtcShells.Lock()
-	mock.calls.EnsureShellInEtcShells = append(mock.calls.EnsureShellInEtcShells, callInfo)
-	mock.lockEnsureShellInEtcShells.Unlock()
-	return mock.EnsureShellInEtcShellsFunc(shellPath)
-}
-
-// EnsureShellInEtcShellsCalls gets all the calls that were made to EnsureShellInEtcShells.
-// Check the length with:
-//
-//	len(mockedOsManager.EnsureShellInEtcShellsCalls())
-func (mock *MoqOsManager) EnsureShellInEtcShellsCalls() []struct {
-	ShellPath string
-} {
-	var calls []struct {
-		ShellPath string
-	}
-	mock.lockEnsureShellInEtcShells.RLock()
-	calls = mock.calls.EnsureShellInEtcShells
-	mock.lockEnsureShellInEtcShells.RUnlock()
-	return calls
-}
-
-// GetChezmoiConfigHome calls GetChezmoiConfigHomeFunc.
-func (mock *MoqOsManager) GetChezmoiConfigHome() (string, error) {
-	if mock.GetChezmoiConfigHomeFunc == nil {
-		panic("MoqOsManager.GetChezmoiConfigHomeFunc: method is nil but OsManager.GetChezmoiConfigHome was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetChezmoiConfigHome.Lock()
-	mock.calls.GetChezmoiConfigHome = append(mock.calls.GetChezmoiConfigHome, callInfo)
-	mock.lockGetChezmoiConfigHome.Unlock()
-	return mock.GetChezmoiConfigHomeFunc()
-}
-
-// GetChezmoiConfigHomeCalls gets all the calls that were made to GetChezmoiConfigHome.
-// Check the length with:
-//
-//	len(mockedOsManager.GetChezmoiConfigHomeCalls())
-func (mock *MoqOsManager) GetChezmoiConfigHomeCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetChezmoiConfigHome.RLock()
-	calls = mock.calls.GetChezmoiConfigHome
-	mock.lockGetChezmoiConfigHome.RUnlock()
-	return calls
+	lockGetConfigDir       sync.RWMutex
+	lockGetCurrentUsername sync.RWMutex
+	lockGetHomeDir         sync.RWMutex
+	lockGetProgramPath     sync.RWMutex
+	lockGetProgramVersion  sync.RWMutex
+	lockGetenv             sync.RWMutex
+	lockProgramExists      sync.RWMutex
 }
 
 // GetConfigDir calls GetConfigDirFunc.
@@ -461,38 +163,6 @@ func (mock *MoqOsManager) GetCurrentUsernameCalls() []struct {
 	mock.lockGetCurrentUsername.RLock()
 	calls = mock.calls.GetCurrentUsername
 	mock.lockGetCurrentUsername.RUnlock()
-	return calls
-}
-
-// GetFileOwner calls GetFileOwnerFunc.
-func (mock *MoqOsManager) GetFileOwner(path string) (string, error) {
-	if mock.GetFileOwnerFunc == nil {
-		panic("MoqOsManager.GetFileOwnerFunc: method is nil but OsManager.GetFileOwner was just called")
-	}
-	callInfo := struct {
-		Path string
-	}{
-		Path: path,
-	}
-	mock.lockGetFileOwner.Lock()
-	mock.calls.GetFileOwner = append(mock.calls.GetFileOwner, callInfo)
-	mock.lockGetFileOwner.Unlock()
-	return mock.GetFileOwnerFunc(path)
-}
-
-// GetFileOwnerCalls gets all the calls that were made to GetFileOwner.
-// Check the length with:
-//
-//	len(mockedOsManager.GetFileOwnerCalls())
-func (mock *MoqOsManager) GetFileOwnerCalls() []struct {
-	Path string
-} {
-	var calls []struct {
-		Path string
-	}
-	mock.lockGetFileOwner.RLock()
-	calls = mock.calls.GetFileOwner
-	mock.lockGetFileOwner.RUnlock()
 	return calls
 }
 
@@ -595,38 +265,6 @@ func (mock *MoqOsManager) GetProgramVersionCalls() []struct {
 	return calls
 }
 
-// GetUserShell calls GetUserShellFunc.
-func (mock *MoqOsManager) GetUserShell(username string) (string, error) {
-	if mock.GetUserShellFunc == nil {
-		panic("MoqOsManager.GetUserShellFunc: method is nil but OsManager.GetUserShell was just called")
-	}
-	callInfo := struct {
-		Username string
-	}{
-		Username: username,
-	}
-	mock.lockGetUserShell.Lock()
-	mock.calls.GetUserShell = append(mock.calls.GetUserShell, callInfo)
-	mock.lockGetUserShell.Unlock()
-	return mock.GetUserShellFunc(username)
-}
-
-// GetUserShellCalls gets all the calls that were made to GetUserShell.
-// Check the length with:
-//
-//	len(mockedOsManager.GetUserShellCalls())
-func (mock *MoqOsManager) GetUserShellCalls() []struct {
-	Username string
-} {
-	var calls []struct {
-		Username string
-	}
-	mock.lockGetUserShell.RLock()
-	calls = mock.calls.GetUserShell
-	mock.lockGetUserShell.RUnlock()
-	return calls
-}
-
 // Getenv calls GetenvFunc.
 func (mock *MoqOsManager) Getenv(key string) string {
 	if mock.GetenvFunc == nil {
@@ -688,145 +326,5 @@ func (mock *MoqOsManager) ProgramExistsCalls() []struct {
 	mock.lockProgramExists.RLock()
 	calls = mock.calls.ProgramExists
 	mock.lockProgramExists.RUnlock()
-	return calls
-}
-
-// SetOwnership calls SetOwnershipFunc.
-func (mock *MoqOsManager) SetOwnership(path string, username string) error {
-	if mock.SetOwnershipFunc == nil {
-		panic("MoqOsManager.SetOwnershipFunc: method is nil but OsManager.SetOwnership was just called")
-	}
-	callInfo := struct {
-		Path     string
-		Username string
-	}{
-		Path:     path,
-		Username: username,
-	}
-	mock.lockSetOwnership.Lock()
-	mock.calls.SetOwnership = append(mock.calls.SetOwnership, callInfo)
-	mock.lockSetOwnership.Unlock()
-	return mock.SetOwnershipFunc(path, username)
-}
-
-// SetOwnershipCalls gets all the calls that were made to SetOwnership.
-// Check the length with:
-//
-//	len(mockedOsManager.SetOwnershipCalls())
-func (mock *MoqOsManager) SetOwnershipCalls() []struct {
-	Path     string
-	Username string
-} {
-	var calls []struct {
-		Path     string
-		Username string
-	}
-	mock.lockSetOwnership.RLock()
-	calls = mock.calls.SetOwnership
-	mock.lockSetOwnership.RUnlock()
-	return calls
-}
-
-// SetPermissions calls SetPermissionsFunc.
-func (mock *MoqOsManager) SetPermissions(path string, mode os.FileMode) error {
-	if mock.SetPermissionsFunc == nil {
-		panic("MoqOsManager.SetPermissionsFunc: method is nil but OsManager.SetPermissions was just called")
-	}
-	callInfo := struct {
-		Path string
-		Mode os.FileMode
-	}{
-		Path: path,
-		Mode: mode,
-	}
-	mock.lockSetPermissions.Lock()
-	mock.calls.SetPermissions = append(mock.calls.SetPermissions, callInfo)
-	mock.lockSetPermissions.Unlock()
-	return mock.SetPermissionsFunc(path, mode)
-}
-
-// SetPermissionsCalls gets all the calls that were made to SetPermissions.
-// Check the length with:
-//
-//	len(mockedOsManager.SetPermissionsCalls())
-func (mock *MoqOsManager) SetPermissionsCalls() []struct {
-	Path string
-	Mode os.FileMode
-} {
-	var calls []struct {
-		Path string
-		Mode os.FileMode
-	}
-	mock.lockSetPermissions.RLock()
-	calls = mock.calls.SetPermissions
-	mock.lockSetPermissions.RUnlock()
-	return calls
-}
-
-// SetUserShell calls SetUserShellFunc.
-func (mock *MoqOsManager) SetUserShell(username string, shellPath string) error {
-	if mock.SetUserShellFunc == nil {
-		panic("MoqOsManager.SetUserShellFunc: method is nil but OsManager.SetUserShell was just called")
-	}
-	callInfo := struct {
-		Username  string
-		ShellPath string
-	}{
-		Username:  username,
-		ShellPath: shellPath,
-	}
-	mock.lockSetUserShell.Lock()
-	mock.calls.SetUserShell = append(mock.calls.SetUserShell, callInfo)
-	mock.lockSetUserShell.Unlock()
-	return mock.SetUserShellFunc(username, shellPath)
-}
-
-// SetUserShellCalls gets all the calls that were made to SetUserShell.
-// Check the length with:
-//
-//	len(mockedOsManager.SetUserShellCalls())
-func (mock *MoqOsManager) SetUserShellCalls() []struct {
-	Username  string
-	ShellPath string
-} {
-	var calls []struct {
-		Username  string
-		ShellPath string
-	}
-	mock.lockSetUserShell.RLock()
-	calls = mock.calls.SetUserShell
-	mock.lockSetUserShell.RUnlock()
-	return calls
-}
-
-// UserExists calls UserExistsFunc.
-func (mock *MoqOsManager) UserExists(username string) (bool, error) {
-	if mock.UserExistsFunc == nil {
-		panic("MoqOsManager.UserExistsFunc: method is nil but OsManager.UserExists was just called")
-	}
-	callInfo := struct {
-		Username string
-	}{
-		Username: username,
-	}
-	mock.lockUserExists.Lock()
-	mock.calls.UserExists = append(mock.calls.UserExists, callInfo)
-	mock.lockUserExists.Unlock()
-	return mock.UserExistsFunc(username)
-}
-
-// UserExistsCalls gets all the calls that were made to UserExists.
-// Check the length with:
-//
-//	len(mockedOsManager.UserExistsCalls())
-func (mock *MoqOsManager) UserExistsCalls() []struct {
-	Username string
-} {
-	var calls []struct {
-		Username string
-	}
-	mock.lockUserExists.RLock()
-	calls = mock.calls.UserExists
-	mock.lockUserExists.RUnlock()
 	return calls
 }

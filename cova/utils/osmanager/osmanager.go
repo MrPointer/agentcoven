@@ -1,80 +1,29 @@
 package osmanager
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
-	"runtime"
-	"strconv"
-	"strings"
-	"syscall"
-
-	"path/filepath"
 
 	"github.com/MrPointer/agentcoven/cova/utils"
 	"github.com/MrPointer/agentcoven/cova/utils/logger"
-	"github.com/MrPointer/agentcoven/cova/utils/privilege"
 )
 
 // UserManager defines operations for managing system users.
 type UserManager interface {
-	// AddUser creates a new user in the system.
-	AddUser(username string) error
-
-	// AddUserToGroup adds a user to a specified group.
-	AddUserToGroup(username, group string) error
-
-	// UserExists checks if a user exists in the system.
-	UserExists(username string) (bool, error)
-
 	// GetHomeDirectory returns the home directory of the current user.
 	GetHomeDir() (string, error)
 
 	// GetConfigDir returns the configuration directory of the current user.
 	GetConfigDir() (string, error)
 
-	// GetChezmoiConfigHome returns the configuration directory where chezmoi actually looks for its config.
-	// This is always ~/.config regardless of XDG specification on different platforms.
-	GetChezmoiConfigHome() (string, error)
-
 	// GetCurrentUsername returns the current user's username.
 	GetCurrentUsername() (string, error)
-
-	// GetUserShell returns the default login shell for the specified user.
-	GetUserShell(username string) (string, error)
-
-	// SetUserShell sets the default login shell for the specified user.
-	// On Linux, uses usermod -s. On macOS, uses dscl.
-	SetUserShell(username, shellPath string) error
 }
 
-// SudoManager defines operations for managing sudo permissions.
-type SudoManager interface {
-	// AddSudoAccess grants password-less sudo access to a user.
-	AddSudoAccess(username string) error
-}
-
-// EtcShellsManager defines operations for managing /etc/shells.
-type EtcShellsManager interface {
-	// EnsureShellInEtcShells adds the given shell path to /etc/shells if it is not already present.
-	EnsureShellInEtcShells(shellPath string) error
-}
-
-// FilePermissionManager defines operations for managing filesystem permissions.
-type FilePermissionManager interface {
-	// SetOwnership sets ownership of a directory to a user.
-	SetOwnership(path, username string) error
-
-	// SetPermissions sets permissions for a file or directory.
-	SetPermissions(path string, mode os.FileMode) error
-
-	// GetFileOwner returns the username of the file owner.
-	GetFileOwner(path string) (string, error)
-}
-
+// VersionExtractor is a function type that defines how to extract version information from a program's output.
 type VersionExtractor func(string) (string, error)
 
 type ProgramQuery interface {
@@ -99,196 +48,55 @@ type EnvironmentManager interface {
 // OsManager combines all system operation interfaces.
 type OsManager interface {
 	UserManager
-	SudoManager
-	EtcShellsManager
-	FilePermissionManager
 	ProgramQuery
 	EnvironmentManager
 }
 
-// UnixOsManager implements OsManager for Unix-like systems.
-type UnixOsManager struct {
+// DefaultOsManager implements OsManager for Unix-like systems.
+type DefaultOsManager struct {
 	logger     logger.Logger
 	fileSystem utils.FileSystem
 	commander  utils.Commander
-	escalator  privilege.Escalator
 }
 
-var _ OsManager = (*UnixOsManager)(nil)
+var _ OsManager = (*DefaultOsManager)(nil)
 
-// NewUnixOsManager creates a new UnixOsManager with injected Escalator and FileSystem.
+// NewDefaultOsManager creates a new DefaultOsManager with injected Escalator and FileSystem.
 // Intended for deterministic unit tests.
-func NewUnixOsManager(
+func NewDefaultOsManager(
 	logger logger.Logger,
 	commander utils.Commander,
-	escalator privilege.Escalator,
 	fileSystem utils.FileSystem,
-) *UnixOsManager {
-	return &UnixOsManager{
+) *DefaultOsManager {
+	return &DefaultOsManager{
 		logger:     logger,
 		fileSystem: fileSystem,
 		commander:  commander,
-		escalator:  escalator,
 	}
 }
 
-func (u *UnixOsManager) runPrivileged(cmd string, args []string, opts ...utils.Option) (*utils.Result, error) {
-	escalated, err := u.escalator.EscalateCommand(cmd, args)
-	if err != nil {
-		return nil, err
-	}
-	return u.commander.RunCommand(escalated.Command, escalated.Args, opts...)
-}
-
-func (u *UnixOsManager) UserExists(username string) (bool, error) {
-	_, err := user.Lookup(username)
-	if err != nil {
-		return false, nil
-	}
-	return true, nil
-}
-
-func (u *UnixOsManager) AddUser(username string) error {
-	u.logger.Debug("User '%s' does not exist, creating...", username)
-
-	// Try useradd, fallback to adduser.
-	useraddCmd := []string{"useradd", "-m", "-s", "/bin/bash", username}
-	_, err := u.runPrivileged(useraddCmd[0], useraddCmd[1:])
-	if err != nil {
-		// Try adduser as fallback.
-		adduserCmd := []string{"adduser", "--disabled-password", "--gecos", "''", username}
-		_, err = u.runPrivileged(adduserCmd[0], adduserCmd[1:])
-		if err != nil {
-			return fmt.Errorf("failed to create user '%s' with useradd/adduser: %w", username, err)
-		}
-	}
-
-	return nil
-}
-
-func (u *UnixOsManager) AddUserToGroup(username, group string) error {
-	u.logger.Debug("Adding '%s' to %s group", username, group)
-	usermodCmd := []string{"usermod", "-aG", group, username}
-	_, err := u.runPrivileged(usermodCmd[0], usermodCmd[1:])
-	// Often we don't care if the user is already in the group.
-	if err != nil {
-		u.logger.Debug("Note: User might already be in the %s group", group)
-	}
-
-	return nil
-}
-
-func (u *UnixOsManager) GetHomeDir() (string, error) {
+func (u *DefaultOsManager) GetHomeDir() (string, error) {
 	return os.UserHomeDir()
 }
 
-func (u *UnixOsManager) GetConfigDir() (string, error) {
+func (u *DefaultOsManager) GetConfigDir() (string, error) {
 	return os.UserConfigDir()
 }
 
-func (u *UnixOsManager) GetChezmoiConfigHome() (string, error) {
-	homeDir, err := u.GetHomeDir()
+// GetCurrentUsername returns the current user's username.
+func (u *DefaultOsManager) GetCurrentUsername() (string, error) {
+	currentUser, err := user.Current()
 	if err != nil {
-		return "", fmt.Errorf("failed to get home directory: %w", err)
+		return "", fmt.Errorf("failed to get current user: %w", err)
 	}
-	return filepath.Join(homeDir, ".config"), nil
+	return currentUser.Username, nil
 }
 
-func (u *UnixOsManager) AddSudoAccess(username string) error {
-	sudoersFile := fmt.Sprintf("/etc/sudoers.d/%s", username)
-	sudoersLine := fmt.Sprintf("%s ALL=(ALL) NOPASSWD:ALL", username)
-	_, err := u.runPrivileged(
-		"tee",
-		[]string{sudoersFile},
-		utils.WithCaptureOutput(),
-		utils.WithInputString(sudoersLine+"\n"),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to add passwordless sudo for '%s': %w", username, err)
-	}
-
-	return nil
-}
-
-func (u *UnixOsManager) EnsureShellInEtcShells(shellPath string) error {
-	u.logger.Debug("Checking if %s is in /etc/shells", shellPath)
-
-	content, err := u.fileSystem.ReadFileContents("/etc/shells")
-	if err != nil {
-		return fmt.Errorf("failed to read /etc/shells: %w", err)
-	}
-
-	scanner := bufio.NewScanner(strings.NewReader(string(content)))
-	for scanner.Scan() {
-		if strings.TrimSpace(scanner.Text()) == shellPath {
-			u.logger.Debug("Shell %s already in /etc/shells", shellPath)
-			return nil
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("failed to scan /etc/shells: %w", err)
-	}
-
-	u.logger.Debug("Adding %s to /etc/shells", shellPath)
-	_, err = u.runPrivileged(
-		"tee",
-		[]string{"-a", "/etc/shells"},
-		utils.WithCaptureOutput(),
-		utils.WithInputString(shellPath+"\n"),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to append shell to /etc/shells: %w", err)
-	}
-
-	return nil
-}
-
-func (u *UnixOsManager) SetOwnership(path, username string) error {
-	u.logger.Debug("Setting ownership of %s to %s", path, username)
-	chownCmd := []string{"chown", "-R", fmt.Sprintf("%s:%s", username, username), path}
-	_, err := u.runPrivileged(chownCmd[0], chownCmd[1:])
-	if err != nil {
-		return fmt.Errorf("failed to chown %s: %w", path, err)
-	}
-
-	return nil
-}
-
-func (u *UnixOsManager) SetPermissions(path string, mode os.FileMode) error {
-	u.logger.Debug("Setting permissions of %s to %o", path, mode)
-	chmodCmd := []string{"chmod", fmt.Sprintf("%o", mode), path}
-	_, err := u.runPrivileged(chmodCmd[0], chmodCmd[1:])
-	if err != nil {
-		return fmt.Errorf("failed to chmod %s: %w", path, err)
-	}
-
-	return nil
-}
-
-func (u *UnixOsManager) GetFileOwner(path string) (string, error) {
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		return "", fmt.Errorf("failed to get file info for %s: %w", path, err)
-	}
-
-	stat, ok := fileInfo.Sys().(*syscall.Stat_t)
-	if !ok {
-		return "", fmt.Errorf("failed to get file info")
-	}
-
-	owner, err := user.LookupId(strconv.FormatUint(uint64(stat.Uid), 10))
-	if err != nil {
-		return "", fmt.Errorf("failed to lookup owner for %s: %w", path, err)
-	}
-
-	return owner.Username, nil
-}
-
-func (u *UnixOsManager) GetProgramPath(program string) (string, error) {
+func (u *DefaultOsManager) GetProgramPath(program string) (string, error) {
 	return exec.LookPath(program)
 }
 
-func (u *UnixOsManager) ProgramExists(program string) (bool, error) {
+func (u *DefaultOsManager) ProgramExists(program string) (bool, error) {
 	_, err := u.GetProgramPath(program)
 	if err != nil {
 		if errors.Is(err, exec.ErrNotFound) || errors.Is(err, os.ErrNotExist) {
@@ -299,7 +107,7 @@ func (u *UnixOsManager) ProgramExists(program string) (bool, error) {
 	return true, nil // Program found.
 }
 
-func (u *UnixOsManager) GetProgramVersion(
+func (u *DefaultOsManager) GetProgramVersion(
 	program string,
 	versionExtractor VersionExtractor,
 	queryArgs ...string,
@@ -323,111 +131,6 @@ func (u *UnixOsManager) GetProgramVersion(
 	return version, nil
 }
 
-func (u *UnixOsManager) Getenv(key string) string {
+func (u *DefaultOsManager) Getenv(key string) string {
 	return os.Getenv(key)
-}
-
-// GetCurrentUsername returns the current user's username.
-func (u *UnixOsManager) GetCurrentUsername() (string, error) {
-	currentUser, err := user.Current()
-	if err != nil {
-		return "", fmt.Errorf("failed to get current user: %w", err)
-	}
-	return currentUser.Username, nil
-}
-
-// GetUserShell returns the default login shell for the specified user.
-// On macOS, uses dscl. On Linux, reads /etc/passwd.
-func (u *UnixOsManager) GetUserShell(username string) (string, error) {
-	// Try to get shell from user.Lookup first (works on both platforms).
-	lookedUpUser, err := user.Lookup(username)
-	if err != nil {
-		return "", fmt.Errorf("failed to lookup user %s: %w", username, err)
-	}
-
-	// On Unix systems, we can try to get the shell from /etc/passwd via the user package.
-	// However, the user.User struct doesn't expose the shell directly.
-	// We need platform-specific approaches.
-
-	// For macOS, use dscl.
-	if isDarwin() {
-		result, err := u.commander.RunCommand("dscl", []string{
-			".", "-read",
-			fmt.Sprintf("/Users/%s", username),
-			"UserShell",
-		}, utils.WithCaptureOutput())
-		if err != nil {
-			return "", fmt.Errorf("failed to read UserShell via dscl: %w", err)
-		}
-
-		// Output format: "UserShell: /path/to/shell"
-		output := strings.TrimSpace(string(result.Stdout))
-		parts := strings.SplitN(output, ":", 2)
-		if len(parts) != 2 {
-			return "", fmt.Errorf("unexpected dscl output format: %s", output)
-		}
-
-		return strings.TrimSpace(parts[1]), nil
-	}
-
-	// For Linux, parse /etc/passwd.
-	// The user's home directory from Lookup gives us a hint that user exists.
-	_ = lookedUpUser
-
-	passwdFile, err := os.Open("/etc/passwd")
-	if err != nil {
-		return "", fmt.Errorf("failed to open /etc/passwd: %w", err)
-	}
-	defer passwdFile.Close()
-
-	scanner := bufio.NewScanner(passwdFile)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, username+":") {
-			fields := strings.Split(line, ":")
-			if len(fields) >= 7 {
-				return fields[6], nil
-			}
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return "", fmt.Errorf("error reading /etc/passwd: %w", err)
-	}
-
-	return "", fmt.Errorf("user %s not found in /etc/passwd", username)
-}
-
-// SetUserShell sets the default login shell for the specified user.
-// On macOS, uses dscl. On Linux, uses usermod -s.
-func (u *UnixOsManager) SetUserShell(username, shellPath string) error {
-	if isDarwin() {
-		// dscl . -create /Users/username UserShell /path/to/shell
-		// Requires root privileges on macOS
-		dsclCmd := []string{"dscl", ".", "-create", fmt.Sprintf("/Users/%s", username), "UserShell", shellPath}
-		_, err := u.runPrivileged(dsclCmd[0], dsclCmd[1:], utils.WithCaptureOutput())
-		if err != nil {
-			return fmt.Errorf("failed to set shell via dscl: %w", err)
-		}
-		return nil
-	}
-
-	// Linux: usermod -s /path/to/shell username
-	usermodCmd := []string{"usermod", "-s", shellPath, username}
-	_, err := u.runPrivileged(usermodCmd[0], usermodCmd[1:])
-	if err != nil {
-		return fmt.Errorf("failed to set shell via usermod: %w", err)
-	}
-
-	return nil
-}
-
-// isDarwin returns true if the current OS is macOS.
-func isDarwin() bool {
-	return runtime.GOOS == "darwin"
-}
-
-// IsRoot returns true if the current user is root.
-func IsRoot() bool {
-	return os.Geteuid() == 0
 }
