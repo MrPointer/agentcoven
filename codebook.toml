@@ -1,1 +1,4 @@
-words = ["fprintln"]
+words = [
+    "cova",
+    "fprintln",
+]
