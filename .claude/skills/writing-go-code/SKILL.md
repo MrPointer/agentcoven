@@ -57,6 +57,63 @@ func NewHandler() *Handler {
 }
 ```
 
+## Testability
+
+Every external dependency (OS calls, file I/O, command execution, environment access, network, time) must be behind an interface so unit tests can inject mocks. This is non-negotiable — code that calls `os.*`, `exec.*`, or similar directly in business logic is untestable.
+
+**The pattern**:
+
+1. Define an interface describing the capability
+2. Create a `Default*` concrete implementation that wraps the real calls
+3. Constructor returns the concrete type (not the interface)
+4. Business logic accepts the interface, never the concrete type
+5. The composition root (e.g., `cmd/add.go`) wires concrete types to interfaces
+
+```go
+// 1. Interface — what consumers depend on
+type FileSystem interface {
+    ReadFileContents(path string) ([]byte, error)
+    PathExists(path string) (bool, error)
+}
+
+// 2. Concrete implementation — wraps real OS calls
+type DefaultFileSystem struct{}
+
+func NewDefaultFileSystem() *DefaultFileSystem {
+    return &DefaultFileSystem{}
+}
+
+func (fs *DefaultFileSystem) ReadFileContents(path string) ([]byte, error) {
+    return os.ReadFile(path)
+}
+
+// 3. Business logic — accepts interface, never calls os.* directly
+func LoadConfig(fs FileSystem, path string) (Config, error) {
+    data, err := fs.ReadFileContents(path)
+    // ...
+}
+
+// 4. Composition root — wires concrete to interface
+func runAdd(cmd *cobra.Command, args []string) error {
+    fs := utils.NewDefaultFileSystem()
+    cfg, err := config.LoadConfig(fs, configPath)
+    // ...
+}
+```
+
+**What must be behind an interface**:
+
+- File I/O (`os.ReadFile`, `os.WriteFile`, `os.MkdirAll`, etc.) → `FileSystem`
+- Command execution (`os/exec`) → `Commander`
+- Environment variables (`os.Getenv`) → `EnvironmentManager`
+- Time, network, or any other non-deterministic dependency
+
+**What does NOT need an interface**:
+
+- Pure functions (string manipulation, data transformation)
+- Standard library types used as values (`time.Duration`, `filepath.Join`)
+- CLI framework wiring (Cobra commands, flag parsing)
+
 ## Mock Generation
 
 Mocks use `mockery` with moq template. To regenerate all mocks:
@@ -121,5 +178,6 @@ func (s *MyService) Process(ctx context.Context) error {
 
 - Use the Go standard library whenever possible. Only use third-party libraries when necessary.
 - Pre-allocate slices/maps when size is known.
-- Wrap OS operations in interfaces for mockability.
+- All external dependencies must be behind interfaces — see the Testability section above for the full pattern.
+- All non-CLI codepaths must be unit-testable via mock injection. If a function can't be tested without hitting the real OS, it needs refactoring.
 - Never edit mock files manually.
