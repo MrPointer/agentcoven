@@ -24,20 +24,57 @@ Before creating an inline mock, check if a `*_mock.go` file exists in the interf
 ls cova/<package-path>/*_mock.go
 ```
 
-## Test Naming
+## Test Naming (testdox style)
 
-**Format:** `Test_<DescriptiveStatement>`
+A test name must be **self-describing** — reading it alone should be enough to understand what the test verifies, without looking at the code.
 
-Test names describe behavior, not implementation:
+Test names are sentences in CamelCase that read as documentation when spaces are inserted between words.
+This is the [testdox](https://github.com/bitfield/gotestdox) convention — tools render them as readable sentences automatically.
+
+### Format
+
+Test names **must** use BDD-style phrasing: describe what is being done and what should happen.
+Use "doing X should Y" as the base structure, and append "when Z" for conditional behavior.
+
+- **General behavior:** `Test_DoingXShouldY` or `Test_DoingXShouldYWhenZ`
+- **Function-specific:** `TestFunctionName_DoingXShouldY` or `TestFunctionName_DoingXShouldYWhenZ`
+
+The first underscore separates the function/type name from the descriptive sentence.
+For general tests not tied to a specific function, `Test_` acts as the prefix and the rest is the sentence.
+
+### Examples
 
 ```go
-// Good: describes behavior
-func Test_CompatibilityConfigCanBeLoadedFromFile(t *testing.T)
-func Test_CreatingClientShouldLoadCompatibilityMapFromFile(t *testing.T)
+func Test_ProcessingValidInputShouldReturnSuccess(t *testing.T)
+func Test_LoadingEmptyConfigShouldFallBackToDefaults(t *testing.T)
+func TestHandleInput_ReadingInputShouldCloseItAfterwards(t *testing.T)
+func TestNewClient_CreatingClientShouldReturnErrorWhenConfigIsMissing(t *testing.T)
+```
 
-// Bad: describes implementation
+Bad — doesn't use BDD-style phrasing:
+
+```go
 func Test_LoadConfig(t *testing.T)
-func Test_ConfigLoader_Success(t *testing.T)
+func Test_ValidInputReturnsSuccess(t *testing.T)
+func TestNewClient_Error(t *testing.T)
+```
+
+### Table-driven subtest names
+
+Subtest names must make sense when combined with the parent test name, since testdox concatenates them (e.g., `TestParse_ParsingInputShouldSucceed/WhenInputIsValidJSON`).
+The parent test carries the "doing X should Y" phrasing; subtests provide the varying condition in CamelCase:
+
+```go
+func TestParse_ParsingInputShouldSucceed(t *testing.T) {
+    tests := []struct {
+        name  string
+        input string
+    }{
+        {"WhenInputIsValidJSON", `{"key":"val"}`},
+        {"WhenInputIsEmptyObject", `{}`},
+    }
+    ...
+}
 ```
 
 ## Assertions
@@ -64,7 +101,7 @@ Unit tests verify a single function or method in isolation.
 ```go
 package mypackage
 
-func Test_ServiceProcessesRequestSuccessfully(t *testing.T) {
+func TestProcess_ProcessingValidInputShouldReturnResult(t *testing.T) {
     // Arrange
     mock := &MoqDependency{
         DoWorkFunc: func(ctx context.Context, input string) (string, error) {
@@ -87,16 +124,16 @@ func Test_ServiceProcessesRequestSuccessfully(t *testing.T) {
 Use when testing multiple scenarios of the same function:
 
 ```go
-func Test_VerbosityLevelDetermination(t *testing.T) {
+func TestDetermineVerbosity_SettingFlagsShouldReturnCorrectLevel(t *testing.T) {
     tests := []struct {
         name     string
         verbose  bool
         extra    bool
         expected VerbosityLevel
     }{
-        {"default returns normal", false, false, VerbosityNormal},
-        {"verbose flag returns verbose", true, false, VerbosityVerbose},
-        {"both flags returns extra verbose", true, true, VerbosityExtraVerbose},
+        {"WhenUsingDefaults", false, false, VerbosityNormal},
+        {"WhenSettingVerboseFlag", true, false, VerbosityVerbose},
+        {"WhenSettingBothFlags", true, true, VerbosityExtraVerbose},
     }
 
     for _, tt := range tests {
@@ -111,15 +148,16 @@ func Test_VerbosityLevelDetermination(t *testing.T) {
 ## Integration Tests
 
 Integration tests verify interaction between components, including OS-dependent interactions.
+They may use a mix of real dependencies and mocks as appropriate.
 
 - Allow opting out with `testing.Short()`.
 - Place in the test package (e.g., `mypackage_test` for `mypackage` package).
-- Use BDD-style naming: `Test_<gerund>_Should_<behavior>_When_<condition>`.
+- Follow testdox naming (same as unit tests).
 
 ```go
 package mypackage_test
 
-func Test_ProcessingRequest_Should_ReturnResult_When_DependencyIsAvailable(t *testing.T) {
+func TestProcess_ProcessingRequestShouldReturnResultWhenDependencyIsAvailable(t *testing.T) {
     if testing.Short() {
         t.Skip("skipping integration test in short mode")
     }
