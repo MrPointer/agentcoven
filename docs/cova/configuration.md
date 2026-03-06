@@ -10,14 +10,14 @@ This file is user-authored — edited directly or managed by commands like [`cov
 
 ```yaml
 subscriptions:
-  - name: platform-team
+  - name: platform
     repo: github.com/acme/coven-blocks
-    path: teams/platform
+    path: covens/platform
     ref: main
 
-  - name: frontend-team
+  - name: frontend
     repo: github.com/acme/coven-blocks
-    path: teams/frontend
+    path: covens/frontend
     ref: v2.1.0
 
 frameworks:

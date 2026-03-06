@@ -22,7 +22,7 @@ The user must specify which subscription to target. For existing blocks, this is
 
 `cova package` prepares a block for contribution. It handles:
 
-- **Namespacing.** New blocks are renamed to follow the `{prefix}-{team}-{block-name}` [naming convention][naming], derived from the target coven's manifest.
+- **Namespacing.** New blocks are renamed to follow the `{org}-{coven}-{block-name}` [naming convention][naming], derived from the target coven's manifest.
 - **Validation.** The block is checked against the relevant standard for its type (e.g., skills must comply with the [Agent Skills specification][agent-skills-spec]).
 - **Placement.** The block is mapped to the correct location in the coven repository structure.
 

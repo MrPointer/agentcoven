@@ -14,12 +14,12 @@ The user's local configuration tracks which covens they subscribe to and which f
 
 A subscription binds a local name to a coven within a repository:
 
-| Field  | Required | Description                                                                      |
-|--------|----------|----------------------------------------------------------------------------------|
-| `name` | Yes      | Local name for this subscription. Used as the team segment for [single-team repos][single-team]. |
-| `repo` | Yes      | Repository URL.                                                                  |
-| `path` | No       | Path within the repo to the coven root. Used for [monorepos][monorepo].          |
-| `ref`  | No       | Git ref to track (branch, tag, commit). Defaults to the repo's default branch.   |
+| Field  | Required | Description                                                                                     |
+|--------|----------|-------------------------------------------------------------------------------------------------|
+| `name` | Yes      | Local name for this subscription. Matches the coven name from the [manifest][manifest].         |
+| `repo` | Yes      | Repository URL.                                                                                 |
+| `path` | No       | Path within the repo to the coven root. Used for [multi-coven repositories][multi-coven].       |
+| `ref`  | No       | Git ref to track (branch, tag, commit). Defaults to the repo's default branch.                  |
 
 A user can hold any number of subscriptions across any number of repositories.
 
@@ -93,12 +93,11 @@ The client invokes the adapter once per subscription. The adapter receives the s
 ```json
 {
   "operation": "apply",
-  "subscription": "platform-team",
+  "subscription": "platform",
   "workspace": "/home/user/.cache/cova/repos/github.com/acme/coven-blocks",
   "manifest": {
     "org": "acme",
-    "prefix": "acme",
-    "team": "platform"
+    "coven": "platform"
   },
   "blocks": {
     "skills": [
@@ -172,11 +171,10 @@ The client invokes the adapter once per subscription being removed, so the adapt
 ```json
 {
   "operation": "remove",
-  "subscription": "platform-team",
+  "subscription": "platform",
   "manifest": {
     "org": "acme",
-    "prefix": "acme",
-    "team": "platform"
+    "coven": "platform"
   },
   "blocks": {
     "skills": [
@@ -216,9 +214,10 @@ A `null` error indicates success. The client proceeds to delete the block files 
 
 Before invoking an adapter, the client resolves each block to the correct [variant][framework-variants] for that adapter:
 
-1. If the block contains a subdirectory matching the adapter name, use that variant.
-2. Otherwise, use the block's root content (the framework-agnostic version).
-3. If the block contains only variants for other adapters and no root content, skip the block for this adapter.
+1. If the block directory contains a `variants.yaml` file, read it. If the adapter name is listed, use the corresponding subdirectory as the variant. If the adapter name is not listed, skip the block for this adapter.
+2. If the block directory does not contain a `variants.yaml` file, use the block's root content (the framework-agnostic version).
+
+The presence of `variants.yaml` is the sole signal for variant detection. Subdirectories in blocks without `variants.yaml` are never treated as variants, regardless of their names.
 
 A framework-specific variant must only be applied by the adapter it was authored for. The client must never pass a variant authored for one adapter to a different adapter.
 
@@ -249,8 +248,7 @@ The adapter protocol's JSON schemas are available as standalone files under [`sc
 [repo-spec]: ./spec.md
 [manifest]: ./spec.md#root-manifest
 [naming]: ./spec.md#naming-convention
-[monorepo]: ./spec.md#monorepo
-[single-team]: ./spec.md#single-team-repository
+[multi-coven]: ./spec.md#multi-coven-repository
 [framework-variants]: ./spec.md#framework-variants
 [agent-skills-spec]: https://agentskills.io/specification
 [schemas]: ../schemas/adapter/

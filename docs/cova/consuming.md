@@ -10,17 +10,17 @@ Consuming is how blocks from a coven repository end up in the user's agent frame
 
 `--ref` pins a specific version (tag, branch, or commit SHA). Without it, the subscription tracks the repository's default branch.
 
-### Monorepo Selection
+### Multi-coven Selection
 
-For [monorepo][monorepo] repositories, the user must specify which team(s) to subscribe to. Team names can be passed as arguments:
+For [multi-coven][multi-coven] repositories, the user must specify which coven(s) to subscribe to. Coven names can be passed as arguments:
 
 ```
 cova add github.com/acme/coven-blocks platform frontend
 ```
 
-If the repository is a monorepo and no team names are given, cova prompts the user to select interactively.
+If the repository has multiple covens and no names are given, cova prompts the user to select interactively.
 
-Each selected team becomes its own subscription entry in the config — they can be updated and removed independently.
+Each selected coven becomes its own subscription entry in the config — they can be updated and removed independently.
 
 ---
 
@@ -80,8 +80,8 @@ The [workspace][workspaces] clone is not deleted — it's cache, shared across s
 
 ```
 Subscriptions:
-  platform-team   github.com/acme/coven-blocks  teams/platform  @ main
-  frontend-team   github.com/acme/coven-blocks  teams/frontend  @ v2.1.0
+  platform   github.com/acme/coven-blocks  covens/platform  @ main
+  frontend   github.com/acme/coven-blocks  covens/frontend  @ v2.1.0
 
 Applied: 12 blocks (8 skills, 3 rules, 1 agent)
 Frameworks: claude-code, cursor
@@ -95,10 +95,10 @@ The default view answers the most common question: what am I subscribed to, and 
 
 ```
 Subscriptions:
-  platform-team   github.com/acme/coven-blocks  teams/platform  @ main
-  frontend-team   github.com/acme/coven-blocks  teams/frontend  @ v2.1.0
+  platform   github.com/acme/coven-blocks  covens/platform  @ main
+  frontend   github.com/acme/coven-blocks  covens/frontend  @ v2.1.0
 
-platform-team (7 blocks):
+platform (7 blocks):
   skills:
     acme-platform-code-review
     acme-platform-testing
@@ -110,7 +110,7 @@ platform-team (7 blocks):
     acme-platform-reviewer
     acme-platform-debugger
 
-frontend-team (5 blocks):
+frontend (5 blocks):
   skills:
     acme-frontend-component-patterns
     acme-frontend-accessibility
@@ -123,13 +123,13 @@ frontend-team (5 blocks):
 Frameworks: claude-code, cursor
 ```
 
-Blocks are listed by name, not by file path. The grouping order — subscription then block type — matches how users think about their covens: "what did I get from the platform team?"
+Blocks are listed by name, not by file path. The grouping order — subscription then block type — matches how users think about their covens: "what did I get from the platform coven?"
 
 <!-- Reference Links -->
 [subscriptions]: ../client-spec.md#subscriptions
 [naming]: ../spec.md#naming-convention
 [manifest]: ../spec.md#root-manifest
-[monorepo]: ../spec.md#monorepo
+[multi-coven]: ../spec.md#multi-coven-repository
 [configuration]: ./configuration.md
 [adapters]: ./adapters.md
 [workspaces]: ./workspaces.md

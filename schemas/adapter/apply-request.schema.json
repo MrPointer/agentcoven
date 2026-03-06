@@ -31,7 +31,7 @@
   "$defs": {
     "manifest": {
       "type": "object",
-      "required": ["org", "prefix", "team"],
+      "required": ["org", "prefix", "coven"],
       "properties": {
         "org": {
           "type": "string",
@@ -41,9 +41,9 @@
           "type": "string",
           "description": "Naming prefix from the coven manifest."
         },
-        "team": {
+        "coven": {
           "type": "string",
-          "description": "Team name from the coven or subscription."
+          "description": "Coven name from the manifest."
         }
       }
     },

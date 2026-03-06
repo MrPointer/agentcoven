@@ -8,24 +8,24 @@ This document defines how coven repositories are structured, what goes in a mani
 - **Vendor-agnostic by default.** Blocks are assumed portable across frameworks. When framework-specific content is unavoidable, [variants][framework-variants] allow targeted authoring without affecting other frameworks.
 - **User sovereignty.** Implementations must never touch files they don't manage.
 - **Standards-compliant.** Well-known block types follow their respective specifications (e.g., skills follow the [Agent Skills specification][agent-skills-spec]).
-- **Extensible taxonomy.** Well-known block types are first-class, but teams can define their own.
+- **Extensible taxonomy.** Well-known block types are first-class, but covens can define their own.
 - **No premature abstraction.** A block is its file(s). No mandatory metadata sidecars.
 
 ---
 
 ## Naming Convention
 
-Blocks in a coven repository are namespaced to ensure coexistence when applied alongside blocks from other teams, organizations, or the user's own collection.
+Blocks in a coven repository are namespaced to ensure coexistence when applied alongside blocks from other covens, organizations, or the user's own collection.
 
 Block names follow the pattern:
 
 ```
-{prefix}-{team}-{block-name}
+{org}-{coven}-{block-name}
 ```
 
-For example, a skill named `code-review` owned by the `platform` team in the `acme` organization becomes `acme-platform-code-review`.
+For example, a skill named `code-review` in the `platform` coven of the `acme` organization becomes `acme-platform-code-review`.
 
-The `prefix` and `team` segments are derived from the [manifest][manifest]. Both must be lowercase alphanumeric strings with no hyphens, ensuring the combined name is unambiguous and compliant with standards such as the [Agent Skills specification][agent-skills-spec].
+Both the `org` and `coven` segments are derived from the [manifest][manifest]. Both must be lowercase alphanumeric strings, optionally containing hyphens (no leading or trailing hyphens, no consecutive hyphens). The combined name is unambiguous and compliant with standards such as the [Agent Skills specification][agent-skills-spec].
 
 Implementations should handle this namespacing during submission (when a block is added to the coven), not during application. This keeps the coven repository as the source of truth and makes application a straightforward copy.
 
@@ -33,11 +33,11 @@ Implementations should handle this namespacing during submission (when a block i
 
 ## Repository Structure
 
-A **coven** is a self-contained collection of blocks owned by a team, with a [manifest][manifest]. A git repository contains one or more covens.
+A **coven** is a self-contained collection of blocks, with a [manifest][manifest]. A git repository contains one or more covens.
 
-### Single-team Repository
+### Single-coven Repository
 
-The most common case: a single team with one coven at the repository root:
+The most common case: a single coven at the repository root:
 
 ```
 manifest.yaml
@@ -54,15 +54,14 @@ rules/
     rule.md
 ```
 
-### Monorepo
+### Multi-coven Repository
 
-Organizations with multiple teams may host them in a single repository. Each team directory is a self-contained coven with its own [team manifest][team-manifest]:
+Organizations may host multiple covens in a single repository. Each coven directory under `covens/` is self-contained:
 
 ```
 manifest.yaml
-teams/
+covens/
   platform/
-    manifest.yaml
     skills/
       acme-platform-deployment/
         SKILL.md
@@ -70,7 +69,6 @@ teams/
       acme-platform-oncall-helper/
         agent.md
   frontend/
-    manifest.yaml
     skills/
       acme-frontend-component-patterns/
         SKILL.md
@@ -79,7 +77,7 @@ teams/
         rule.md
 ```
 
-The root `manifest.yaml` defines organization-level metadata (shared across all teams). Each team's `manifest.yaml` identifies the team. Git provider features (e.g., GitHub's CODEOWNERS) may be used to scope review requirements per team directory.
+The root `manifest.yaml` defines organization-level metadata and declares coven names via the [`covens`][manifest] field. Each listed name must correspond to a directory under `covens/`. Directories not listed in the manifest are ignored — they may contain shared utilities, templates, or other non-coven content. Git provider features (e.g., GitHub's CODEOWNERS) may be used to scope review requirements per coven directory.
 
 ---
 
@@ -87,33 +85,28 @@ The root `manifest.yaml` defines organization-level metadata (shared across all 
 
 ### Root Manifest
 
-Every coven repository has a `manifest.yaml` at its root:
+Every coven repository has a `manifest.yaml` at its root.
+
+**Single-coven repository:**
 
 ```yaml
 org: acme
-prefix: acme
+covens: platform
 ```
 
-| Field    | Required | Description                                                                                |
-|----------|----------|--------------------------------------------------------------------------------------------|
-| `org`    | Yes      | Organization name. Identifies the organization that owns the repository.                   |
-| `prefix` | Yes      | First segment of namespaced block names. Lowercase alphanumeric only, no hyphens. Must be unique per user across all their subscriptions. |
-
-For single-team repositories, the organization may be the team itself.
-
-### Team Manifest
-
-In a [monorepo][monorepo], each team directory contains its own `manifest.yaml`:
+**Multi-coven repository:**
 
 ```yaml
-team: platform
+org: acme
+covens:
+  - platform
+  - frontend
 ```
 
-| Field  | Required | Description                                                          |
-|--------|----------|----------------------------------------------------------------------|
-| `team` | Yes      | Team name. Second segment of namespaced block names. Lowercase alphanumeric only, no hyphens. |
-
-In a [single-team repository][single-team], the team segment is derived from the subscription's `name` field in the user's [local configuration][local-config].
+| Field | Required | Description |
+| --- | --- | --- |
+| `org` | Yes | Organization name. First segment of namespaced block names. Lowercase alphanumeric, optionally containing hyphens (no leading/trailing, no consecutive). Must be unique per user across all their subscriptions. |
+| `covens` | Yes | Coven name (string) or list of coven names. Each must be a valid [naming segment][naming]. When a list is provided, each name must correspond to a directory under `covens/` ([multi-coven repository][multi-coven]). A string value indicates a [single-coven repository][single-coven]. |
 
 ---
 
@@ -149,37 +142,48 @@ The `name` field in `SKILL.md` frontmatter must match the directory name.
 
 By default, blocks are **framework-agnostic** — they are assumed to work with any agent framework. This is the common case and requires no special structure.
 
-When a block's content is incompatible across frameworks (e.g., frontmatter fields with conflicting semantics), the block may contain **framework-specific variants**. Each variant is a subdirectory named after the target adapter:
+When a block's content is incompatible across frameworks (e.g., frontmatter fields with conflicting semantics), the block may contain **framework-specific variants**. Variants are declared explicitly via a `variants.yaml` file in the block directory:
 
 ```
 skills/
   acme-platform-code-review/
-    SKILL.md                    # framework-agnostic (default)
+    SKILL.md                    # framework-agnostic (no variants.yaml)
 
   acme-platform-deploy-pipeline/
+    variants.yaml               # declares which adapters have variants
     claude-code/
       SKILL.md                  # Claude Code variant
     opencode/
       SKILL.md                  # OpenCode variant
 ```
 
-The variant directory name must match the name of the [adapter][adapter-protocol] that will consume it. This is how the client resolves which variant to use.
+The `variants.yaml` file lists the adapters that have variants for this block:
 
-A block may have a mix of a root (framework-agnostic) version and framework-specific variants. It may also have only variants and no root version. The resolution order is defined in the [client specification][client-spec].
+```yaml
+variants:
+  - claude-code
+  - opencode
+```
+
+Each entry must correspond to a subdirectory in the block directory, named after the [adapter][adapter-protocol] that will consume it.
+
+A block with `variants.yaml` must not contain a root-level block file (e.g., `SKILL.md` at the block root). The presence of `variants.yaml` signals that the block is variant-only — frameworks not listed are not supported by this block. Files and directories not declared in `variants.yaml` are ignored during application, so block directories may contain auxiliary content alongside variant subdirectories.
+
+A block without `variants.yaml` is framework-agnostic. Any subdirectories are treated as block content, never as variants — regardless of their names. This eliminates ambiguity: variant intent is always explicit.
 
 Framework-specific variants are **not portable**. A variant authored for one adapter cannot be applied by a different adapter. This is by design — the variant exists precisely because the block's content is not framework-agnostic.
 
 ---
 
-## Multi-team and Multi-org
+## Multi-coven and Multi-org
 
-Users subscribe to teams, not organizations. A user can subscribe to any number of teams across any number of repositories. Each subscription's blocks carry distinct `{prefix}-{team}-` prefixes in their names, so they coexist without collision.
+Users subscribe to covens, not organizations. A user can subscribe to any number of covens across any number of repositories. Each subscription's blocks carry distinct `{org}-{coven}-` prefixes in their names, so they coexist without collision.
 
-Within an organization, blocks from different teams are distinguished by the team segment. Across organizations, blocks are distinguished by the prefix. A true conflict requires two subscriptions to contain a block with the same full namespaced name. Implementations must detect and flag this.
+Within an organization, blocks from different covens are distinguished by the coven segment. Across organizations, blocks are distinguished by the org segment. A true conflict requires two subscriptions to contain a block with the same full namespaced name. Implementations must detect and flag this.
 
 ### Example
 
-A user subscribed to two teams from Acme and one from Contoso sees blocks applied as follows:
+A user subscribed to two covens from Acme and one from Contoso sees blocks applied as follows:
 
 ```
 ~/.agents/skills/
@@ -197,9 +201,8 @@ A user subscribed to two teams from Acme and one from Contoso sees blocks applie
 [cova]: ./cova/index.md
 [client-spec]: ./client-spec.md
 [manifest]: #root-manifest
-[team-manifest]: #team-manifest
-[monorepo]: #monorepo
-[single-team]: #single-team-repository
+[multi-coven]: #multi-coven-repository
+[single-coven]: #single-coven-repository
 [local-config]: ./client-spec.md#subscriptions
 [naming]: #naming-convention
 [framework-variants]: #framework-variants
