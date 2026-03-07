@@ -1,0 +1,32 @@
+# Managed as an allowlist,
+# so ignore everything by default and only allow specific files and directories.
+
+# Ignore everything
+*
+
+# Except
+!/.gitignore
+
+!/docs/**/*
+!/schemas/**/*
+!/cova/**/*
+
+# GitHub Actions
+!.github/**/*.yml
+!.github/**/*.yaml
+!.github/renovate.json
+
+!CLAUDE.md
+!AGENTS.md
+!.claude/settings.json
+!.claude/agents/**/*
+!.claude/agent-memory/**/*
+!.claude/skills/**/*
+!.agents/skills/**/*
+
+!codebook.toml
+!LICENSE
+!README.md
+
+# ...even if they are in subdirectories
+!*/
