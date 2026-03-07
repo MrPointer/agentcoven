@@ -9,7 +9,8 @@ Project-specific test conventions for this codebase.
 
 ## Critical Rules
 
-- **Always use mockery-generated `Moq*` mocks** when one exists for the interface. Never hand-roll a mock struct for an interface that has a `*_mock.go` file. Run `mockery` (no args) from the module root to regenerate mocks after interface changes.
+- **Always use mockery-generated `Moq*` mocks** when one exists for the interface. Never hand-roll a mock struct for an interface that has a `*_mock.go` file.
+- **NEVER edit `*_mock.go` files manually** — not even for "simple" signature changes. Always regenerate by running `mockery` (no args) from the module root. If `mockery` fails due to stale mock contents, delete the offending `*_mock.go` file and re-run `mockery`.
 
 ## Mock Selection Guide
 
