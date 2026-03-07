@@ -89,6 +89,7 @@ func (u *DefaultOsManager) GetCurrentUsername() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get current user: %w", err)
 	}
+
 	return currentUser.Username, nil
 }
 
@@ -102,8 +103,10 @@ func (u *DefaultOsManager) ProgramExists(program string) (bool, error) {
 		if errors.Is(err, exec.ErrNotFound) || errors.Is(err, os.ErrNotExist) {
 			return false, nil // Program not found.
 		}
+
 		return false, fmt.Errorf("error checking program existence: %w", err)
 	}
+
 	return true, nil // Program found.
 }
 
@@ -118,6 +121,7 @@ func (u *DefaultOsManager) GetProgramVersion(
 	}
 
 	cmd := exec.Command(program, args...)
+
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get version for %s: %w", program, err)

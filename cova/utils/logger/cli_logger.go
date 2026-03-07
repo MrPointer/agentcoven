@@ -37,8 +37,8 @@ const (
 
 // CliLogger implements the Logger interface using lipgloss styling.
 type CliLogger struct {
-	verbosity VerbosityLevel
 	output    io.Writer
+	verbosity VerbosityLevel
 }
 
 var _ Logger = (*CliLogger)(nil)

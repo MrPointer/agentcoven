@@ -2,8 +2,10 @@ package utils
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
 	"strings"
@@ -21,7 +23,7 @@ type Commander interface {
 	RunCommand(name string, args []string, opts ...Option) (*Result, error)
 }
 
-// Result contains the output and metadata from a command execution
+// Result contains the output and metadata from a command execution.
 type Result struct {
 	// Stdout contains the standard output
 	Stdout []byte
@@ -33,95 +35,87 @@ type Result struct {
 	Duration time.Duration
 }
 
-// String returns the stdout as a string
+// String returns the stdout as a string.
 func (r *Result) String() string {
 	return string(r.Stdout)
 }
 
-// StderrString returns the stderr as a string
+// StderrString returns the stderr as a string.
 func (r *Result) StderrString() string {
 	return string(r.Stderr)
 }
 
-// Options contains all configurable options for command execution
+// Options contains all configurable options for command execution.
 type Options struct {
-	// Env contains environment variables to set for the command
-	Env map[string]string
-	// Dir is the working directory for the command
-	Dir string
-	// Input is data to send to the command's stdin
-	Input []byte
-	// CaptureOutput determines whether to capture stdout/stderr or pipe to current process
+	Stdout        io.Writer
+	Stderr        io.Writer
+	Env           map[string]string
+	Dir           string
+	Input         []byte
+	Timeout       time.Duration
 	CaptureOutput bool
-	// Interactive determines whether this is an interactive command that needs direct terminal access
-	Interactive bool
-	// Timeout specifies a timeout for the command execution
-	Timeout time.Duration
-	// Stdout specifies where to write stdout (only used when CaptureOutput is false)
-	Stdout io.Writer
-	// Stderr specifies where to write stderr (only used when CaptureOutput is false)
-	Stderr io.Writer
+	Interactive   bool
 }
 
-// Option is a function that modifies Options
+// Option is a function that modifies Options.
 type Option func(*Options)
 
-// EmptyOption returns an empty option function
+// EmptyOption returns an empty option function.
 func EmptyOption() Option {
 	return func(opts *Options) {}
 }
 
-// WithEnv sets environment variables for the command
+// WithEnv sets environment variables for the command.
 func WithEnv(env map[string]string) Option {
 	return func(o *Options) {
 		if o.Env == nil {
 			o.Env = make(map[string]string)
 		}
-		for k, v := range env {
-			o.Env[k] = v
-		}
+
+		maps.Copy(o.Env, env)
 	}
 }
 
-// WithEnvVar sets a single environment variable
+// WithEnvVar sets a single environment variable.
 func WithEnvVar(key, value string) Option {
 	return func(o *Options) {
 		if o.Env == nil {
 			o.Env = make(map[string]string)
 		}
+
 		o.Env[key] = value
 	}
 }
 
-// WithDir sets the working directory for the command
+// WithDir sets the working directory for the command.
 func WithDir(dir string) Option {
 	return func(o *Options) {
 		o.Dir = dir
 	}
 }
 
-// WithInput provides input to send to the command's stdin
+// WithInput provides input to send to the command's stdin.
 func WithInput(input []byte) Option {
 	return func(o *Options) {
 		o.Input = input
 	}
 }
 
-// WithInputString provides string input to send to the command's stdin
+// WithInputString provides string input to send to the command's stdin.
 func WithInputString(input string) Option {
 	return func(o *Options) {
 		o.Input = []byte(input)
 	}
 }
 
-// WithCaptureOutput enables capturing stdout and stderr in the result
+// WithCaptureOutput enables capturing stdout and stderr in the result.
 func WithCaptureOutput() Option {
 	return func(o *Options) {
 		o.CaptureOutput = true
 	}
 }
 
-// WithDiscardOutput discards stdout and stderr output (sends to io.Discard)
+// WithDiscardOutput discards stdout and stderr output (sends to io.Discard).
 func WithDiscardOutput() Option {
 	return func(o *Options) {
 		o.Stdout = io.Discard
@@ -130,7 +124,7 @@ func WithDiscardOutput() Option {
 }
 
 // WithInteractive enables interactive mode for commands that need user input
-// This ensures stdin/stdout/stderr are connected to the terminal and not captured
+// This ensures stdin/stdout/stderr are connected to the terminal and not captured.
 func WithInteractive() Option {
 	return func(o *Options) {
 		o.Interactive = true
@@ -139,7 +133,7 @@ func WithInteractive() Option {
 }
 
 // WithInteractiveCapture enables interactive mode while still capturing output
-// This allows user interaction but also captures output for parsing
+// This allows user interaction but also captures output for parsing.
 func WithInteractiveCapture() Option {
 	return func(o *Options) {
 		o.Interactive = true
@@ -147,28 +141,28 @@ func WithInteractiveCapture() Option {
 	}
 }
 
-// WithTimeout sets a timeout for command execution
+// WithTimeout sets a timeout for command execution.
 func WithTimeout(timeout time.Duration) Option {
 	return func(o *Options) {
 		o.Timeout = timeout
 	}
 }
 
-// WithStdout sets where stdout should be written (when not capturing)
+// WithStdout sets where stdout should be written (when not capturing).
 func WithStdout(w io.Writer) Option {
 	return func(o *Options) {
 		o.Stdout = w
 	}
 }
 
-// WithStderr sets where stderr should be written (when not capturing)
+// WithStderr sets where stderr should be written (when not capturing).
 func WithStderr(w io.Writer) Option {
 	return func(o *Options) {
 		o.Stderr = w
 	}
 }
 
-// DefaultCommander is the production implementation using os/exec
+// DefaultCommander is the production implementation using os/exec.
 type DefaultCommander struct {
 	logger logger.Logger
 }
@@ -221,8 +215,10 @@ func (c *DefaultCommander) RunCommand(name string, args []string, opts ...Option
 		cmd.Stdin = bytes.NewReader(options.Input)
 	}
 
-	var stdout, stderr bytes.Buffer
-	var result *Result
+	var (
+		stdout, stderr bytes.Buffer
+		result         *Result
+	)
 
 	start := time.Now()
 
@@ -247,8 +243,10 @@ func (c *DefaultCommander) RunCommand(name string, args []string, opts ...Option
 
 	// Handle timeout
 	var err error
+
 	if options.Timeout > 0 {
 		done := make(chan error, 1)
+
 		go func() {
 			done <- cmd.Run()
 		}()
@@ -261,6 +259,7 @@ func (c *DefaultCommander) RunCommand(name string, args []string, opts ...Option
 			if cmd.Process != nil {
 				cmd.Process.Kill()
 			}
+
 			err = fmt.Errorf("command timed out after %v", options.Timeout)
 		}
 	} else {
@@ -281,7 +280,8 @@ func (c *DefaultCommander) RunCommand(name string, args []string, opts ...Option
 
 	// Get exit code
 	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
+		exitError := &exec.ExitError{}
+		if errors.As(err, &exitError) {
 			result.ExitCode = exitError.ExitCode()
 		} else {
 			// Non-exit error (e.g., command not found, timeout)

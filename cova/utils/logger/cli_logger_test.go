@@ -38,9 +38,9 @@ func Test_NewCliLogger_WithVerbosityLevels_CreatesValidInstance(t *testing.T) {
 
 func Test_VerbosityLevels_WithDifferentMessages_FilterCorrectly(t *testing.T) {
 	tests := []struct {
+		logFunc   func(logger.Logger)
 		name      string
 		verbosity logger.VerbosityLevel
-		logFunc   func(logger.Logger)
 		shouldLog bool
 	}{
 		{

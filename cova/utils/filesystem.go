@@ -66,7 +66,7 @@ type FileSystem interface {
 	// This is a convenience method for small files where streaming is not needed.
 	ReadFileContents(path string) ([]byte, error)
 
-	//Rename renames (moves) a file or directory from oldPath to newPath.
+	// Rename renames (moves) a file or directory from oldPath to newPath.
 	Rename(oldPath, newPath string) error
 
 	// ReadDirectory reads the contents of a directory at the specified path.
@@ -176,7 +176,7 @@ func (fs *DefaultFileSystem) IsExecutable(path string) (bool, error) {
 	}
 
 	// Check if any execute bit is set
-	return info.Mode()&0111 != 0, nil
+	return info.Mode()&0o111 != 0, nil
 }
 
 func (fs *DefaultFileSystem) ReadFile(path string, receiver io.Writer) (int64, error) {
