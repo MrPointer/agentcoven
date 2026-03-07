@@ -16,7 +16,7 @@ A subscription binds a local name to a coven within a repository:
 
 | Field  | Required | Description                                                                                     |
 |--------|----------|-------------------------------------------------------------------------------------------------|
-| `name` | Yes      | Local name for this subscription. Matches the coven name from the [manifest][manifest].         |
+| `name` | Yes      | Local name for this subscription. Composed as `{org}-{coven}` from the [manifest][manifest], ensuring uniqueness across subscriptions (since `org` is unique per user and coven names are unique within an org). |
 | `repo` | Yes      | Repository URL.                                                                                 |
 | `path` | No       | Path within the repo to the coven root. Used for [multi-coven repositories][multi-coven].       |
 | `ref`  | No       | Git ref to track (branch, tag, commit). Defaults to the repo's default branch.                  |

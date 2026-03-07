@@ -4,6 +4,8 @@ cova is the reference implementation of the [client specification][client-spec].
 
 Think of it like chezmoi for AI building blocks: a declarative source state in git, an applied target state on disk, and a CLI that reconciles between them.
 
+> **Implementation status:** cova is under active development. Currently, only `cova add` is implemented — it subscribes to coven repositories (creates config entries and workspace clones) but does not yet apply blocks to disk. Other commands (`update`, `apply`, `remove`, `status`, `package`, `submit`) and framework adapter support are planned but not yet available.
+
 ---
 
 ## Consuming
