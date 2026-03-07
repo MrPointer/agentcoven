@@ -2,6 +2,7 @@
 package workspace
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -15,16 +16,16 @@ import (
 // Git defines the operations needed for managing git repositories.
 type Git interface {
 	// Clone clones a repository from the given URL into the target directory.
-	Clone(repoURL, targetDir string) error
+	Clone(ctx context.Context, repoURL, targetDir string) error
 
 	// Fetch fetches the latest changes in the given repository directory.
-	Fetch(repoDir string) error
+	Fetch(ctx context.Context, repoDir string) error
 
 	// RevParse resolves a ref to a commit hash in the given repository directory.
-	RevParse(repoDir, ref string) (string, error)
+	RevParse(ctx context.Context, repoDir, ref string) (string, error)
 
 	// Checkout checks out the given ref in the repository directory.
-	Checkout(repoDir, ref string) error
+	Checkout(ctx context.Context, repoDir, ref string) error
 }
 
 // DefaultGit implements Git using Commander.
@@ -40,8 +41,9 @@ func NewDefaultGit(commander utils.Commander) *DefaultGit {
 }
 
 // Clone clones a repository from the given URL into the target directory.
-func (g *DefaultGit) Clone(repoURL, targetDir string) error {
+func (g *DefaultGit) Clone(ctx context.Context, repoURL, targetDir string) error {
 	_, err := g.commander.RunCommand(
+		ctx,
 		"git",
 		[]string{"clone", repoURL, targetDir},
 		utils.WithCaptureOutput(),
@@ -54,8 +56,9 @@ func (g *DefaultGit) Clone(repoURL, targetDir string) error {
 }
 
 // Fetch fetches the latest changes in the given repository directory.
-func (g *DefaultGit) Fetch(repoDir string) error {
+func (g *DefaultGit) Fetch(ctx context.Context, repoDir string) error {
 	_, err := g.commander.RunCommand(
+		ctx,
 		"git",
 		[]string{"fetch", "--all"},
 		utils.WithDir(repoDir),
@@ -69,8 +72,9 @@ func (g *DefaultGit) Fetch(repoDir string) error {
 }
 
 // RevParse resolves a ref to a commit hash in the given repository directory.
-func (g *DefaultGit) RevParse(repoDir, ref string) (string, error) {
+func (g *DefaultGit) RevParse(ctx context.Context, repoDir, ref string) (string, error) {
 	result, err := g.commander.RunCommand(
+		ctx,
 		"git",
 		[]string{"rev-parse", "--verify", ref},
 		utils.WithDir(repoDir),
@@ -84,8 +88,9 @@ func (g *DefaultGit) RevParse(repoDir, ref string) (string, error) {
 }
 
 // Checkout checks out the given ref in the repository directory.
-func (g *DefaultGit) Checkout(repoDir, ref string) error {
+func (g *DefaultGit) Checkout(ctx context.Context, repoDir, ref string) error {
 	_, err := g.commander.RunCommand(
+		ctx,
 		"git",
 		[]string{"checkout", ref},
 		utils.WithDir(repoDir),
@@ -200,6 +205,7 @@ func stripGitSuffix(s string) string {
 // If ref is non-empty, it checks out that ref after ensuring.
 // Returns the workspace directory path.
 func Ensure(
+	ctx context.Context,
 	git Git,
 	fs utils.FileSystem,
 	basePath string,
@@ -219,7 +225,7 @@ func Ensure(
 	}
 
 	if exists {
-		if err := git.Fetch(workspacePath); err != nil {
+		if err := git.Fetch(ctx, workspacePath); err != nil {
 			return "", err
 		}
 	} else {
@@ -227,13 +233,13 @@ func Ensure(
 			return "", fmt.Errorf("failed to create workspace parent directory: %w", err)
 		}
 
-		if err := git.Clone(repoURL, workspacePath); err != nil {
+		if err := git.Clone(ctx, repoURL, workspacePath); err != nil {
 			return "", err
 		}
 	}
 
 	if ref != "" {
-		if err := git.Checkout(workspacePath, ref); err != nil {
+		if err := git.Checkout(ctx, workspacePath, ref); err != nil {
 			return "", err
 		}
 	}

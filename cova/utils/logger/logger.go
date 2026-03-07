@@ -1,3 +1,4 @@
+// Package logger provides a leveled logging interface and implementations for CLI output.
 package logger
 
 import "io"
@@ -25,13 +26,37 @@ type NoopLogger struct{}
 
 var _ Logger = (*NoopLogger)(nil)
 
-func (l NoopLogger) Trace(format string, args ...any)   {}
-func (l NoopLogger) Debug(format string, args ...any)   {}
-func (l NoopLogger) Info(format string, args ...any)    {}
-func (l NoopLogger) Success(format string, args ...any) {}
-func (l NoopLogger) Warning(format string, args ...any) {}
-func (l NoopLogger) Error(format string, args ...any)   {}
+// Trace is a no-op implementation.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
+func (l NoopLogger) Trace(format string, args ...any) {}
 
+// Debug is a no-op implementation.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
+func (l NoopLogger) Debug(format string, args ...any) {}
+
+// Info is a no-op implementation.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
+func (l NoopLogger) Info(format string, args ...any) {}
+
+// Success is a no-op implementation.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
+func (l NoopLogger) Success(format string, args ...any) {}
+
+// Warning is a no-op implementation.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
+func (l NoopLogger) Warning(format string, args ...any) {}
+
+// Error is a no-op implementation.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
+func (l NoopLogger) Error(format string, args ...any) {}
+
+// Close is a no-op implementation.
 func (l NoopLogger) Close() error { return nil }
 
 // DefaultLogger is the default logger used if none is provided.

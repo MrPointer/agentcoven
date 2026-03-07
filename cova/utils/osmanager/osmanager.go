@@ -1,6 +1,8 @@
+// Package osmanager provides OS-level operations for user management, environment access, and program queries.
 package osmanager
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -13,7 +15,7 @@ import (
 
 // UserManager defines operations for managing system users.
 type UserManager interface {
-	// GetHomeDirectory returns the home directory of the current user.
+	// GetHomeDir returns the home directory of the current user.
 	GetHomeDir() (string, error)
 
 	// GetConfigDir returns the configuration directory of the current user.
@@ -26,6 +28,7 @@ type UserManager interface {
 // VersionExtractor is a function type that defines how to extract version information from a program's output.
 type VersionExtractor func(string) (string, error)
 
+// ProgramQuery provides methods for locating and querying programs on the system PATH.
 type ProgramQuery interface {
 	// GetProgramPath retrieves the full path of a program if it's available in one of the system's PATH directories.
 	// If the program is not found, it returns an error.
@@ -36,7 +39,12 @@ type ProgramQuery interface {
 	ProgramExists(program string) (bool, error)
 
 	// GetProgramVersion retrieves the version of a program by executing it with the provided query arguments.
-	GetProgramVersion(program string, versionExtractor VersionExtractor, queryArgs ...string) (string, error)
+	GetProgramVersion(
+		ctx context.Context,
+		program string,
+		versionExtractor VersionExtractor,
+		queryArgs ...string,
+	) (string, error)
 }
 
 // EnvironmentManager defines operations for managing environment variables.
@@ -75,10 +83,12 @@ func NewDefaultOsManager(
 	}
 }
 
+// GetHomeDir returns the home directory of the current user.
 func (u *DefaultOsManager) GetHomeDir() (string, error) {
 	return os.UserHomeDir()
 }
 
+// GetConfigDir returns the configuration directory of the current user.
 func (u *DefaultOsManager) GetConfigDir() (string, error) {
 	return os.UserConfigDir()
 }
@@ -93,10 +103,12 @@ func (u *DefaultOsManager) GetCurrentUsername() (string, error) {
 	return currentUser.Username, nil
 }
 
+// GetProgramPath retrieves the full path of a program from the system PATH.
 func (u *DefaultOsManager) GetProgramPath(program string) (string, error) {
 	return exec.LookPath(program)
 }
 
+// ProgramExists reports whether a program is available in the system PATH.
 func (u *DefaultOsManager) ProgramExists(program string) (bool, error) {
 	_, err := u.GetProgramPath(program)
 	if err != nil {
@@ -110,7 +122,9 @@ func (u *DefaultOsManager) ProgramExists(program string) (bool, error) {
 	return true, nil // Program found.
 }
 
+// GetProgramVersion retrieves the version string of a program using the given query args and extractor.
 func (u *DefaultOsManager) GetProgramVersion(
+	ctx context.Context,
 	program string,
 	versionExtractor VersionExtractor,
 	queryArgs ...string,
@@ -120,7 +134,7 @@ func (u *DefaultOsManager) GetProgramVersion(
 		args = queryArgs
 	}
 
-	cmd := exec.Command(program, args...)
+	cmd := exec.CommandContext(ctx, program, args...)
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -135,6 +149,7 @@ func (u *DefaultOsManager) GetProgramVersion(
 	return version, nil
 }
 
+// Getenv retrieves the value of the environment variable named by key.
 func (u *DefaultOsManager) Getenv(key string) string {
 	return os.Getenv(key)
 }

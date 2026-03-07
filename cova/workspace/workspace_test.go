@@ -1,6 +1,7 @@
 package workspace_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -128,7 +129,7 @@ func TestNormalizeURL_NormalizingURLShouldReturnError(t *testing.T) {
 
 func TestDefaultGit_CloningRepoShouldCallGitClone(t *testing.T) {
 	commander := &utils.MoqCommander{
-		RunCommandFunc: func(name string, args []string, opts ...utils.Option) (*utils.Result, error) {
+		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
 			require.Equal(t, "git", name)
 			require.Equal(t, []string{"clone", "https://github.com/acme/blocks.git", "/workspace/path"}, args)
 
@@ -137,7 +138,7 @@ func TestDefaultGit_CloningRepoShouldCallGitClone(t *testing.T) {
 	}
 	git := workspace.NewDefaultGit(commander)
 
-	err := git.Clone("https://github.com/acme/blocks.git", "/workspace/path")
+	err := git.Clone(t.Context(), "https://github.com/acme/blocks.git", "/workspace/path")
 
 	require.NoError(t, err)
 	require.Len(t, commander.RunCommandCalls(), 1)
@@ -145,13 +146,13 @@ func TestDefaultGit_CloningRepoShouldCallGitClone(t *testing.T) {
 
 func TestDefaultGit_CloningRepoShouldReturnErrorWhenCommandFails(t *testing.T) {
 	commander := &utils.MoqCommander{
-		RunCommandFunc: func(name string, args []string, opts ...utils.Option) (*utils.Result, error) {
+		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
 			return nil, errors.New("clone failed")
 		},
 	}
 	git := workspace.NewDefaultGit(commander)
 
-	err := git.Clone("https://github.com/acme/blocks.git", "/workspace/path")
+	err := git.Clone(t.Context(), "https://github.com/acme/blocks.git", "/workspace/path")
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "git clone failed")
@@ -159,7 +160,7 @@ func TestDefaultGit_CloningRepoShouldReturnErrorWhenCommandFails(t *testing.T) {
 
 func TestDefaultGit_FetchingRepoShouldCallGitFetch(t *testing.T) {
 	commander := &utils.MoqCommander{
-		RunCommandFunc: func(name string, args []string, opts ...utils.Option) (*utils.Result, error) {
+		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
 			require.Equal(t, "git", name)
 			require.Equal(t, []string{"fetch", "--all"}, args)
 
@@ -168,7 +169,7 @@ func TestDefaultGit_FetchingRepoShouldCallGitFetch(t *testing.T) {
 	}
 	git := workspace.NewDefaultGit(commander)
 
-	err := git.Fetch("/workspace/path")
+	err := git.Fetch(t.Context(), "/workspace/path")
 
 	require.NoError(t, err)
 	require.Len(t, commander.RunCommandCalls(), 1)
@@ -176,13 +177,13 @@ func TestDefaultGit_FetchingRepoShouldCallGitFetch(t *testing.T) {
 
 func TestDefaultGit_FetchingRepoShouldReturnErrorWhenCommandFails(t *testing.T) {
 	commander := &utils.MoqCommander{
-		RunCommandFunc: func(name string, args []string, opts ...utils.Option) (*utils.Result, error) {
+		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
 			return nil, errors.New("fetch failed")
 		},
 	}
 	git := workspace.NewDefaultGit(commander)
 
-	err := git.Fetch("/workspace/path")
+	err := git.Fetch(t.Context(), "/workspace/path")
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "git fetch failed")
@@ -190,7 +191,7 @@ func TestDefaultGit_FetchingRepoShouldReturnErrorWhenCommandFails(t *testing.T) 
 
 func TestDefaultGit_RevParsingRefShouldReturnCommitHash(t *testing.T) {
 	commander := &utils.MoqCommander{
-		RunCommandFunc: func(name string, args []string, opts ...utils.Option) (*utils.Result, error) {
+		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
 			require.Equal(t, "git", name)
 			require.Equal(t, []string{"rev-parse", "--verify", "v1.0.0"}, args)
 
@@ -199,7 +200,7 @@ func TestDefaultGit_RevParsingRefShouldReturnCommitHash(t *testing.T) {
 	}
 	git := workspace.NewDefaultGit(commander)
 
-	hash, err := git.RevParse("/workspace/path", "v1.0.0")
+	hash, err := git.RevParse(t.Context(), "/workspace/path", "v1.0.0")
 
 	require.NoError(t, err)
 	require.Equal(t, "abc123", hash)
@@ -207,13 +208,13 @@ func TestDefaultGit_RevParsingRefShouldReturnCommitHash(t *testing.T) {
 
 func TestDefaultGit_RevParsingRefShouldReturnErrorWhenCommandFails(t *testing.T) {
 	commander := &utils.MoqCommander{
-		RunCommandFunc: func(name string, args []string, opts ...utils.Option) (*utils.Result, error) {
+		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
 			return nil, errors.New("unknown ref")
 		},
 	}
 	git := workspace.NewDefaultGit(commander)
 
-	_, err := git.RevParse("/workspace/path", "nonexistent")
+	_, err := git.RevParse(t.Context(), "/workspace/path", "nonexistent")
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "rev-parse failed")
@@ -221,7 +222,7 @@ func TestDefaultGit_RevParsingRefShouldReturnErrorWhenCommandFails(t *testing.T)
 
 func TestDefaultGit_CheckingOutRefShouldCallGitCheckout(t *testing.T) {
 	commander := &utils.MoqCommander{
-		RunCommandFunc: func(name string, args []string, opts ...utils.Option) (*utils.Result, error) {
+		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
 			require.Equal(t, "git", name)
 			require.Equal(t, []string{"checkout", "v1.0.0"}, args)
 
@@ -230,7 +231,7 @@ func TestDefaultGit_CheckingOutRefShouldCallGitCheckout(t *testing.T) {
 	}
 	git := workspace.NewDefaultGit(commander)
 
-	err := git.Checkout("/workspace/path", "v1.0.0")
+	err := git.Checkout(t.Context(), "/workspace/path", "v1.0.0")
 
 	require.NoError(t, err)
 	require.Len(t, commander.RunCommandCalls(), 1)
@@ -238,13 +239,13 @@ func TestDefaultGit_CheckingOutRefShouldCallGitCheckout(t *testing.T) {
 
 func TestDefaultGit_CheckingOutRefShouldReturnErrorWhenCommandFails(t *testing.T) {
 	commander := &utils.MoqCommander{
-		RunCommandFunc: func(name string, args []string, opts ...utils.Option) (*utils.Result, error) {
+		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
 			return nil, errors.New("checkout failed")
 		},
 	}
 	git := workspace.NewDefaultGit(commander)
 
-	err := git.Checkout("/workspace/path", "v1.0.0")
+	err := git.Checkout(t.Context(), "/workspace/path", "v1.0.0")
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "checkout failed")
@@ -254,7 +255,7 @@ func TestDefaultGit_CheckingOutRefShouldReturnErrorWhenCommandFails(t *testing.T
 
 func TestEnsure_EnsuringWorkspaceShouldCloneWhenNotExists(t *testing.T) {
 	git := &workspace.MoqGit{
-		CloneFunc: func(repoURL, targetDir string) error {
+		CloneFunc: func(ctx context.Context, repoURL, targetDir string) error {
 			require.Equal(t, "https://github.com/acme/blocks.git", repoURL)
 			require.Equal(t, "/cache/cova/repos/github.com/acme/blocks", targetDir)
 
@@ -270,7 +271,7 @@ func TestEnsure_EnsuringWorkspaceShouldCloneWhenNotExists(t *testing.T) {
 		},
 	}
 
-	result, err := workspace.Ensure(git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
+	result, err := workspace.Ensure(t.Context(), git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
 
 	require.NoError(t, err)
 	require.Equal(t, "/cache/cova/repos/github.com/acme/blocks", result)
@@ -280,7 +281,7 @@ func TestEnsure_EnsuringWorkspaceShouldCloneWhenNotExists(t *testing.T) {
 
 func TestEnsure_EnsuringWorkspaceShouldFetchWhenAlreadyExists(t *testing.T) {
 	git := &workspace.MoqGit{
-		FetchFunc: func(repoDir string) error {
+		FetchFunc: func(ctx context.Context, repoDir string) error {
 			require.Equal(t, "/cache/cova/repos/github.com/acme/blocks", repoDir)
 			return nil
 		},
@@ -291,7 +292,7 @@ func TestEnsure_EnsuringWorkspaceShouldFetchWhenAlreadyExists(t *testing.T) {
 		},
 	}
 
-	result, err := workspace.Ensure(git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
+	result, err := workspace.Ensure(t.Context(), git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
 
 	require.NoError(t, err)
 	require.Equal(t, "/cache/cova/repos/github.com/acme/blocks", result)
@@ -301,10 +302,10 @@ func TestEnsure_EnsuringWorkspaceShouldFetchWhenAlreadyExists(t *testing.T) {
 
 func TestEnsure_EnsuringWorkspaceShouldCheckoutRefWhenSpecified(t *testing.T) {
 	git := &workspace.MoqGit{
-		FetchFunc: func(repoDir string) error {
+		FetchFunc: func(ctx context.Context, repoDir string) error {
 			return nil
 		},
-		CheckoutFunc: func(repoDir, ref string) error {
+		CheckoutFunc: func(ctx context.Context, repoDir, ref string) error {
 			require.Equal(t, "/cache/cova/repos/github.com/acme/blocks", repoDir)
 			require.Equal(t, "v1.0.0", ref)
 
@@ -317,7 +318,14 @@ func TestEnsure_EnsuringWorkspaceShouldCheckoutRefWhenSpecified(t *testing.T) {
 		},
 	}
 
-	result, err := workspace.Ensure(git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "v1.0.0")
+	result, err := workspace.Ensure(
+		t.Context(),
+		git,
+		fs,
+		"/cache/cova/repos",
+		"https://github.com/acme/blocks.git",
+		"v1.0.0",
+	)
 
 	require.NoError(t, err)
 	require.Equal(t, "/cache/cova/repos/github.com/acme/blocks", result)
@@ -326,7 +334,7 @@ func TestEnsure_EnsuringWorkspaceShouldCheckoutRefWhenSpecified(t *testing.T) {
 
 func TestEnsure_EnsuringWorkspaceShouldNotCheckoutWhenRefIsEmpty(t *testing.T) {
 	git := &workspace.MoqGit{
-		FetchFunc: func(repoDir string) error {
+		FetchFunc: func(ctx context.Context, repoDir string) error {
 			return nil
 		},
 	}
@@ -336,7 +344,7 @@ func TestEnsure_EnsuringWorkspaceShouldNotCheckoutWhenRefIsEmpty(t *testing.T) {
 		},
 	}
 
-	_, err := workspace.Ensure(git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
+	_, err := workspace.Ensure(t.Context(), git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
 
 	require.NoError(t, err)
 	require.Empty(t, git.CheckoutCalls())
@@ -346,7 +354,7 @@ func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenURLIsInvalid(t *testing.T)
 	git := &workspace.MoqGit{}
 	fs := &utils.MoqFileSystem{}
 
-	_, err := workspace.Ensure(git, fs, "/cache/cova/repos", "", "")
+	_, err := workspace.Ensure(t.Context(), git, fs, "/cache/cova/repos", "", "")
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "normalize URL")
@@ -360,7 +368,7 @@ func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenPathCheckFails(t *testing.
 		},
 	}
 
-	_, err := workspace.Ensure(git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
+	_, err := workspace.Ensure(t.Context(), git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "workspace path")
@@ -368,7 +376,7 @@ func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenPathCheckFails(t *testing.
 
 func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenCloneFails(t *testing.T) {
 	git := &workspace.MoqGit{
-		CloneFunc: func(repoURL, targetDir string) error {
+		CloneFunc: func(ctx context.Context, repoURL, targetDir string) error {
 			return errors.New("git clone failed: network error")
 		},
 	}
@@ -381,7 +389,7 @@ func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenCloneFails(t *testing.T) {
 		},
 	}
 
-	_, err := workspace.Ensure(git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
+	_, err := workspace.Ensure(t.Context(), git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "clone failed")
@@ -389,7 +397,7 @@ func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenCloneFails(t *testing.T) {
 
 func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenFetchFails(t *testing.T) {
 	git := &workspace.MoqGit{
-		FetchFunc: func(repoDir string) error {
+		FetchFunc: func(ctx context.Context, repoDir string) error {
 			return errors.New("git fetch failed: network error")
 		},
 	}
@@ -399,7 +407,7 @@ func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenFetchFails(t *testing.T) {
 		},
 	}
 
-	_, err := workspace.Ensure(git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
+	_, err := workspace.Ensure(t.Context(), git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "fetch failed")
@@ -407,7 +415,7 @@ func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenFetchFails(t *testing.T) {
 
 func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenCreateDirectoryFails(t *testing.T) {
 	git := &workspace.MoqGit{
-		CloneFunc: func(repoURL, targetDir string) error {
+		CloneFunc: func(ctx context.Context, repoURL, targetDir string) error {
 			return nil
 		},
 	}
@@ -420,7 +428,7 @@ func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenCreateDirectoryFails(t *te
 		},
 	}
 
-	_, err := workspace.Ensure(git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
+	_, err := workspace.Ensure(t.Context(), git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "")
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "parent directory")
@@ -428,10 +436,10 @@ func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenCreateDirectoryFails(t *te
 
 func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenCheckoutFails(t *testing.T) {
 	git := &workspace.MoqGit{
-		FetchFunc: func(repoDir string) error {
+		FetchFunc: func(ctx context.Context, repoDir string) error {
 			return nil
 		},
-		CheckoutFunc: func(repoDir, ref string) error {
+		CheckoutFunc: func(ctx context.Context, repoDir, ref string) error {
 			return fmt.Errorf("git checkout failed for ref %q: bad ref", ref)
 		},
 	}
@@ -441,7 +449,14 @@ func TestEnsure_EnsuringWorkspaceShouldReturnErrorWhenCheckoutFails(t *testing.T
 		},
 	}
 
-	_, err := workspace.Ensure(git, fs, "/cache/cova/repos", "https://github.com/acme/blocks.git", "bad-ref")
+	_, err := workspace.Ensure(
+		t.Context(),
+		git,
+		fs,
+		"/cache/cova/repos",
+		"https://github.com/acme/blocks.git",
+		"bad-ref",
+	)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "checkout failed")

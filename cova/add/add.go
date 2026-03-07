@@ -31,7 +31,7 @@ func Run(ctx context.Context, deps Deps, repoURL string, covenNames []string, re
 		return fmt.Errorf("resolving workspace base path: %w", err)
 	}
 
-	repoDir, err := workspace.Ensure(deps.Git, deps.FileSystem, basePath, repoURL, ref)
+	repoDir, err := workspace.Ensure(ctx, deps.Git, deps.FileSystem, basePath, repoURL, ref)
 	if err != nil {
 		return fmt.Errorf("ensuring workspace: %w", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/MrPointer/agentcoven/cova/utils/logger"
 )
 
+// FileSystem defines the file system operations available in the application.
 type FileSystem interface {
 	// CreateFile creates a file at the specified path.
 	// If the file already exists, it will be truncated.
@@ -89,6 +90,7 @@ func NewDefaultFileSystem(logger logger.Logger) *DefaultFileSystem {
 	}
 }
 
+// CreateFile creates or truncates the file at path and returns its name.
 func (fs *DefaultFileSystem) CreateFile(path string) (string, error) {
 	file, err := os.Create(path)
 	if err != nil {
@@ -99,15 +101,18 @@ func (fs *DefaultFileSystem) CreateFile(path string) (string, error) {
 	return file.Name(), nil
 }
 
+// CreateDirectory creates path and all parent directories with default permissions.
 func (fs *DefaultFileSystem) CreateDirectory(path string) error {
 	const defaultPermissions = 0o755 // Default permissions for directories.
 	return os.MkdirAll(path, defaultPermissions)
 }
 
+// CreateDirectoryWithPermissions creates path and all parent directories with the given permissions.
 func (fs *DefaultFileSystem) CreateDirectoryWithPermissions(path string, permissions os.FileMode) error {
 	return os.MkdirAll(path, permissions)
 }
 
+// CreateTemporaryFile creates a temporary file in dir using the given pattern and returns its path.
 func (fs *DefaultFileSystem) CreateTemporaryFile(dir, pattern string) (string, error) {
 	var tempDir string
 	if dir != "" {
@@ -128,6 +133,7 @@ func (fs *DefaultFileSystem) CreateTemporaryFile(dir, pattern string) (string, e
 	return tempFile.Name(), nil
 }
 
+// CreateTemporaryDirectory creates a temporary directory inside dir and returns its path.
 func (fs *DefaultFileSystem) CreateTemporaryDirectory(dir string) (string, error) {
 	var tempDir string
 	if dir != "" {
@@ -137,6 +143,7 @@ func (fs *DefaultFileSystem) CreateTemporaryDirectory(dir string) (string, error
 	return os.MkdirTemp(tempDir, "tempdir-*")
 }
 
+// WriteFile creates or truncates the file at path and writes all data from reader into it.
 func (fs *DefaultFileSystem) WriteFile(path string, reader io.Reader) (int64, error) {
 	file, err := os.Create(path)
 	if err != nil {
@@ -152,10 +159,12 @@ func (fs *DefaultFileSystem) WriteFile(path string, reader io.Reader) (int64, er
 	return bytesWritten, nil
 }
 
+// RemovePath removes the file or directory at path, recursively if necessary.
 func (fs *DefaultFileSystem) RemovePath(path string) error {
 	return os.RemoveAll(path)
 }
 
+// PathExists reports whether a file or directory exists at path.
 func (fs *DefaultFileSystem) PathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -169,6 +178,7 @@ func (fs *DefaultFileSystem) PathExists(path string) (bool, error) {
 	return false, err
 }
 
+// IsExecutable reports whether the file at path has any execute permission bit set.
 func (fs *DefaultFileSystem) IsExecutable(path string) (bool, error) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -179,6 +189,7 @@ func (fs *DefaultFileSystem) IsExecutable(path string) (bool, error) {
 	return info.Mode()&0o111 != 0, nil
 }
 
+// ReadFile reads the file at path and writes its contents to receiver.
 func (fs *DefaultFileSystem) ReadFile(path string, receiver io.Writer) (int64, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -194,14 +205,17 @@ func (fs *DefaultFileSystem) ReadFile(path string, receiver io.Writer) (int64, e
 	return bytesRead, nil
 }
 
+// Rename renames (moves) oldPath to newPath atomically.
 func (fs *DefaultFileSystem) Rename(oldPath, newPath string) error {
 	return os.Rename(oldPath, newPath)
 }
 
+// ReadFileContents reads and returns the entire contents of the file at path.
 func (fs *DefaultFileSystem) ReadFileContents(path string) ([]byte, error) {
 	return os.ReadFile(path)
 }
 
+// ReadDirectory returns the directory entries for the directory at path.
 func (fs *DefaultFileSystem) ReadDirectory(path string) ([]os.DirEntry, error) {
 	return os.ReadDir(path)
 }

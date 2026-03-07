@@ -5,6 +5,7 @@
 package osmanager
 
 import (
+	"context"
 	"sync"
 )
 
@@ -21,7 +22,7 @@ var _ ProgramQuery = &MoqProgramQuery{}
 //			GetProgramPathFunc: func(program string) (string, error) {
 //				panic("mock out the GetProgramPath method")
 //			},
-//			GetProgramVersionFunc: func(program string, versionExtractor VersionExtractor, queryArgs ...string) (string, error) {
+//			GetProgramVersionFunc: func(ctx context.Context, program string, versionExtractor VersionExtractor, queryArgs ...string) (string, error) {
 //				panic("mock out the GetProgramVersion method")
 //			},
 //			ProgramExistsFunc: func(program string) (bool, error) {
@@ -38,7 +39,7 @@ type MoqProgramQuery struct {
 	GetProgramPathFunc func(program string) (string, error)
 
 	// GetProgramVersionFunc mocks the GetProgramVersion method.
-	GetProgramVersionFunc func(program string, versionExtractor VersionExtractor, queryArgs ...string) (string, error)
+	GetProgramVersionFunc func(ctx context.Context, program string, versionExtractor VersionExtractor, queryArgs ...string) (string, error)
 
 	// ProgramExistsFunc mocks the ProgramExists method.
 	ProgramExistsFunc func(program string) (bool, error)
@@ -52,6 +53,8 @@ type MoqProgramQuery struct {
 		}
 		// GetProgramVersion holds details about calls to the GetProgramVersion method.
 		GetProgramVersion []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// Program is the program argument value.
 			Program string
 			// VersionExtractor is the versionExtractor argument value.
@@ -103,15 +106,17 @@ func (mock *MoqProgramQuery) GetProgramPathCalls() []struct {
 }
 
 // GetProgramVersion calls GetProgramVersionFunc.
-func (mock *MoqProgramQuery) GetProgramVersion(program string, versionExtractor VersionExtractor, queryArgs ...string) (string, error) {
+func (mock *MoqProgramQuery) GetProgramVersion(ctx context.Context, program string, versionExtractor VersionExtractor, queryArgs ...string) (string, error) {
 	if mock.GetProgramVersionFunc == nil {
 		panic("MoqProgramQuery.GetProgramVersionFunc: method is nil but ProgramQuery.GetProgramVersion was just called")
 	}
 	callInfo := struct {
+		Ctx              context.Context
 		Program          string
 		VersionExtractor VersionExtractor
 		QueryArgs        []string
 	}{
+		Ctx:              ctx,
 		Program:          program,
 		VersionExtractor: versionExtractor,
 		QueryArgs:        queryArgs,
@@ -119,7 +124,7 @@ func (mock *MoqProgramQuery) GetProgramVersion(program string, versionExtractor 
 	mock.lockGetProgramVersion.Lock()
 	mock.calls.GetProgramVersion = append(mock.calls.GetProgramVersion, callInfo)
 	mock.lockGetProgramVersion.Unlock()
-	return mock.GetProgramVersionFunc(program, versionExtractor, queryArgs...)
+	return mock.GetProgramVersionFunc(ctx, program, versionExtractor, queryArgs...)
 }
 
 // GetProgramVersionCalls gets all the calls that were made to GetProgramVersion.
@@ -127,11 +132,13 @@ func (mock *MoqProgramQuery) GetProgramVersion(program string, versionExtractor 
 //
 //	len(mockedProgramQuery.GetProgramVersionCalls())
 func (mock *MoqProgramQuery) GetProgramVersionCalls() []struct {
+	Ctx              context.Context
 	Program          string
 	VersionExtractor VersionExtractor
 	QueryArgs        []string
 } {
 	var calls []struct {
+		Ctx              context.Context
 		Program          string
 		VersionExtractor VersionExtractor
 		QueryArgs        []string

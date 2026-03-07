@@ -1,7 +1,10 @@
+// Package utils provides common utility interfaces and implementations for file system,
+// command execution, and locking operations.
 package utils
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -20,7 +23,7 @@ import (
 type Commander interface {
 	// RunCommand executes a command with flexible options
 	// It returns the result containing output, error information, and exit code
-	RunCommand(name string, args []string, opts ...Option) (*Result, error)
+	RunCommand(ctx context.Context, name string, args []string, opts ...Option) (*Result, error)
 }
 
 // Result contains the output and metadata from a command execution.
@@ -167,6 +170,7 @@ type DefaultCommander struct {
 	logger logger.Logger
 }
 
+// NewDefaultCommander creates a new DefaultCommander with the given logger.
 func NewDefaultCommander(logger logger.Logger) *DefaultCommander {
 	return &DefaultCommander{
 		logger: logger,
@@ -175,7 +179,13 @@ func NewDefaultCommander(logger logger.Logger) *DefaultCommander {
 
 var _ Commander = (*DefaultCommander)(nil)
 
-func (c *DefaultCommander) RunCommand(name string, args []string, opts ...Option) (*Result, error) {
+// RunCommand executes the named command with the given args and options.
+func (c *DefaultCommander) RunCommand(
+	ctx context.Context,
+	name string,
+	args []string,
+	opts ...Option,
+) (*Result, error) {
 	c.logger.Trace("Running command: %s %s", name, strings.Join(args, " "))
 
 	// Apply default options
@@ -192,7 +202,7 @@ func (c *DefaultCommander) RunCommand(name string, args []string, opts ...Option
 	}
 
 	// Create the command
-	cmd := exec.Command(name, args...)
+	cmd := exec.CommandContext(ctx, name, args...)
 
 	// Set working directory
 	if options.Dir != "" {
@@ -222,20 +232,21 @@ func (c *DefaultCommander) RunCommand(name string, args []string, opts ...Option
 
 	start := time.Now()
 
-	if options.Interactive && !options.CaptureOutput {
+	switch {
+	case options.Interactive && !options.CaptureOutput:
 		// For pure interactive commands, connect directly to terminal
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-	} else if options.Interactive && options.CaptureOutput {
+	case options.Interactive && options.CaptureOutput:
 		// For interactive commands that also need output capture,
 		// use io.MultiWriter to both display and capture
 		cmd.Stdout = io.MultiWriter(os.Stdout, &stdout)
 		cmd.Stderr = io.MultiWriter(os.Stderr, &stderr)
-	} else if options.CaptureOutput {
+	case options.CaptureOutput:
 		// Capture output in buffers
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
-	} else {
+	default:
 		// Pipe to specified writers
 		cmd.Stdout = options.Stdout
 		cmd.Stderr = options.Stderr
@@ -257,7 +268,7 @@ func (c *DefaultCommander) RunCommand(name string, args []string, opts ...Option
 		case <-time.After(options.Timeout):
 			// Timeout occurred
 			if cmd.Process != nil {
-				cmd.Process.Kill()
+				_ = cmd.Process.Kill() //nolint:errcheck // Kill is best-effort cleanup on timeout; error is not actionable.
 			}
 
 			err = fmt.Errorf("command timed out after %v", options.Timeout)

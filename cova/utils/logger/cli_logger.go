@@ -26,8 +26,10 @@ var (
 	errorStyle   = ErrorStyle
 )
 
+// VerbosityLevel controls how much output the logger produces.
 type VerbosityLevel int
 
+// Verbosity levels from least to most verbose.
 const (
 	Minimal VerbosityLevel = iota
 	Normal
@@ -76,6 +78,8 @@ func NewCliLoggerWithOutput(verbosity VerbosityLevel, output io.Writer, withProg
 }
 
 // Trace logs a trace message with gray styling.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
 func (l *CliLogger) Trace(format string, args ...any) {
 	if l.verbosity >= ExtraVerbose {
 		PrintStyled(l.output, debugStyle, format, args...)
@@ -83,6 +87,8 @@ func (l *CliLogger) Trace(format string, args ...any) {
 }
 
 // Debug logs a debug message with gray styling.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
 func (l *CliLogger) Debug(format string, args ...any) {
 	if l.verbosity >= Verbose {
 		PrintStyled(l.output, debugStyle, format, args...)
@@ -90,6 +96,8 @@ func (l *CliLogger) Debug(format string, args ...any) {
 }
 
 // Info logs an informational message with blue styling.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
 func (l *CliLogger) Info(format string, args ...any) {
 	if l.verbosity >= Normal {
 		PrintStyled(l.output, infoStyle, format, args...)
@@ -97,6 +105,8 @@ func (l *CliLogger) Info(format string, args ...any) {
 }
 
 // Success logs a success message with green styling.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
 func (l *CliLogger) Success(format string, args ...any) {
 	if l.verbosity >= Normal {
 		PrintStyled(l.output, successStyle, format, args...)
@@ -104,6 +114,8 @@ func (l *CliLogger) Success(format string, args ...any) {
 }
 
 // Warning logs a warning message with yellow styling.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
 func (l *CliLogger) Warning(format string, args ...any) {
 	if l.verbosity >= Normal {
 		PrintStyled(l.output, warningStyle, format, args...)
@@ -111,6 +123,8 @@ func (l *CliLogger) Warning(format string, args ...any) {
 }
 
 // Error logs an error message with red styling.
+//
+//nolint:goprintffuncname // Logger method names intentionally omit the 'f' suffix; they are semantic level names, not generic printf wrappers.
 func (l *CliLogger) Error(format string, args ...any) {
 	if l.verbosity >= Normal {
 		if l.output == os.Stdout {
@@ -121,12 +135,14 @@ func (l *CliLogger) Error(format string, args ...any) {
 	}
 }
 
-// Cleanup ensures proper cleanup of terminal state, including cursor restoration.
+// Close cleans up terminal state, including cursor restoration.
 func (l *CliLogger) Close() error {
 	return nil
 }
 
 // PrintStyled is a helper function to print styled text to the specified writer.
+//
+//nolint:goprintffuncname // PrintStyled is a styled output helper, not a generic printf wrapper; the name is intentional.
 func PrintStyled(writer io.Writer, style lipgloss.Style, format string, args ...any) {
 	if file, ok := writer.(*os.File); ok {
 		fmt.Fprintln(file, style.Render(fmt.Sprintf(format, args...)))

@@ -5,6 +5,7 @@
 package workspace
 
 import (
+	"context"
 	"sync"
 )
 
@@ -18,16 +19,16 @@ var _ Git = &MoqGit{}
 //
 //		// make and configure a mocked Git
 //		mockedGit := &MoqGit{
-//			CheckoutFunc: func(repoDir string, ref string) error {
+//			CheckoutFunc: func(ctx context.Context, repoDir string, ref string) error {
 //				panic("mock out the Checkout method")
 //			},
-//			CloneFunc: func(repoURL string, targetDir string) error {
+//			CloneFunc: func(ctx context.Context, repoURL string, targetDir string) error {
 //				panic("mock out the Clone method")
 //			},
-//			FetchFunc: func(repoDir string) error {
+//			FetchFunc: func(ctx context.Context, repoDir string) error {
 //				panic("mock out the Fetch method")
 //			},
-//			RevParseFunc: func(repoDir string, ref string) (string, error) {
+//			RevParseFunc: func(ctx context.Context, repoDir string, ref string) (string, error) {
 //				panic("mock out the RevParse method")
 //			},
 //		}
@@ -38,21 +39,23 @@ var _ Git = &MoqGit{}
 //	}
 type MoqGit struct {
 	// CheckoutFunc mocks the Checkout method.
-	CheckoutFunc func(repoDir string, ref string) error
+	CheckoutFunc func(ctx context.Context, repoDir string, ref string) error
 
 	// CloneFunc mocks the Clone method.
-	CloneFunc func(repoURL string, targetDir string) error
+	CloneFunc func(ctx context.Context, repoURL string, targetDir string) error
 
 	// FetchFunc mocks the Fetch method.
-	FetchFunc func(repoDir string) error
+	FetchFunc func(ctx context.Context, repoDir string) error
 
 	// RevParseFunc mocks the RevParse method.
-	RevParseFunc func(repoDir string, ref string) (string, error)
+	RevParseFunc func(ctx context.Context, repoDir string, ref string) (string, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// Checkout holds details about calls to the Checkout method.
 		Checkout []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// RepoDir is the repoDir argument value.
 			RepoDir string
 			// Ref is the ref argument value.
@@ -60,6 +63,8 @@ type MoqGit struct {
 		}
 		// Clone holds details about calls to the Clone method.
 		Clone []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// RepoURL is the repoURL argument value.
 			RepoURL string
 			// TargetDir is the targetDir argument value.
@@ -67,11 +72,15 @@ type MoqGit struct {
 		}
 		// Fetch holds details about calls to the Fetch method.
 		Fetch []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// RepoDir is the repoDir argument value.
 			RepoDir string
 		}
 		// RevParse holds details about calls to the RevParse method.
 		RevParse []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// RepoDir is the repoDir argument value.
 			RepoDir string
 			// Ref is the ref argument value.
@@ -85,21 +94,23 @@ type MoqGit struct {
 }
 
 // Checkout calls CheckoutFunc.
-func (mock *MoqGit) Checkout(repoDir string, ref string) error {
+func (mock *MoqGit) Checkout(ctx context.Context, repoDir string, ref string) error {
 	if mock.CheckoutFunc == nil {
 		panic("MoqGit.CheckoutFunc: method is nil but Git.Checkout was just called")
 	}
 	callInfo := struct {
+		Ctx     context.Context
 		RepoDir string
 		Ref     string
 	}{
+		Ctx:     ctx,
 		RepoDir: repoDir,
 		Ref:     ref,
 	}
 	mock.lockCheckout.Lock()
 	mock.calls.Checkout = append(mock.calls.Checkout, callInfo)
 	mock.lockCheckout.Unlock()
-	return mock.CheckoutFunc(repoDir, ref)
+	return mock.CheckoutFunc(ctx, repoDir, ref)
 }
 
 // CheckoutCalls gets all the calls that were made to Checkout.
@@ -107,10 +118,12 @@ func (mock *MoqGit) Checkout(repoDir string, ref string) error {
 //
 //	len(mockedGit.CheckoutCalls())
 func (mock *MoqGit) CheckoutCalls() []struct {
+	Ctx     context.Context
 	RepoDir string
 	Ref     string
 } {
 	var calls []struct {
+		Ctx     context.Context
 		RepoDir string
 		Ref     string
 	}
@@ -121,21 +134,23 @@ func (mock *MoqGit) CheckoutCalls() []struct {
 }
 
 // Clone calls CloneFunc.
-func (mock *MoqGit) Clone(repoURL string, targetDir string) error {
+func (mock *MoqGit) Clone(ctx context.Context, repoURL string, targetDir string) error {
 	if mock.CloneFunc == nil {
 		panic("MoqGit.CloneFunc: method is nil but Git.Clone was just called")
 	}
 	callInfo := struct {
+		Ctx       context.Context
 		RepoURL   string
 		TargetDir string
 	}{
+		Ctx:       ctx,
 		RepoURL:   repoURL,
 		TargetDir: targetDir,
 	}
 	mock.lockClone.Lock()
 	mock.calls.Clone = append(mock.calls.Clone, callInfo)
 	mock.lockClone.Unlock()
-	return mock.CloneFunc(repoURL, targetDir)
+	return mock.CloneFunc(ctx, repoURL, targetDir)
 }
 
 // CloneCalls gets all the calls that were made to Clone.
@@ -143,10 +158,12 @@ func (mock *MoqGit) Clone(repoURL string, targetDir string) error {
 //
 //	len(mockedGit.CloneCalls())
 func (mock *MoqGit) CloneCalls() []struct {
+	Ctx       context.Context
 	RepoURL   string
 	TargetDir string
 } {
 	var calls []struct {
+		Ctx       context.Context
 		RepoURL   string
 		TargetDir string
 	}
@@ -157,19 +174,21 @@ func (mock *MoqGit) CloneCalls() []struct {
 }
 
 // Fetch calls FetchFunc.
-func (mock *MoqGit) Fetch(repoDir string) error {
+func (mock *MoqGit) Fetch(ctx context.Context, repoDir string) error {
 	if mock.FetchFunc == nil {
 		panic("MoqGit.FetchFunc: method is nil but Git.Fetch was just called")
 	}
 	callInfo := struct {
+		Ctx     context.Context
 		RepoDir string
 	}{
+		Ctx:     ctx,
 		RepoDir: repoDir,
 	}
 	mock.lockFetch.Lock()
 	mock.calls.Fetch = append(mock.calls.Fetch, callInfo)
 	mock.lockFetch.Unlock()
-	return mock.FetchFunc(repoDir)
+	return mock.FetchFunc(ctx, repoDir)
 }
 
 // FetchCalls gets all the calls that were made to Fetch.
@@ -177,9 +196,11 @@ func (mock *MoqGit) Fetch(repoDir string) error {
 //
 //	len(mockedGit.FetchCalls())
 func (mock *MoqGit) FetchCalls() []struct {
+	Ctx     context.Context
 	RepoDir string
 } {
 	var calls []struct {
+		Ctx     context.Context
 		RepoDir string
 	}
 	mock.lockFetch.RLock()
@@ -189,21 +210,23 @@ func (mock *MoqGit) FetchCalls() []struct {
 }
 
 // RevParse calls RevParseFunc.
-func (mock *MoqGit) RevParse(repoDir string, ref string) (string, error) {
+func (mock *MoqGit) RevParse(ctx context.Context, repoDir string, ref string) (string, error) {
 	if mock.RevParseFunc == nil {
 		panic("MoqGit.RevParseFunc: method is nil but Git.RevParse was just called")
 	}
 	callInfo := struct {
+		Ctx     context.Context
 		RepoDir string
 		Ref     string
 	}{
+		Ctx:     ctx,
 		RepoDir: repoDir,
 		Ref:     ref,
 	}
 	mock.lockRevParse.Lock()
 	mock.calls.RevParse = append(mock.calls.RevParse, callInfo)
 	mock.lockRevParse.Unlock()
-	return mock.RevParseFunc(repoDir, ref)
+	return mock.RevParseFunc(ctx, repoDir, ref)
 }
 
 // RevParseCalls gets all the calls that were made to RevParse.
@@ -211,10 +234,12 @@ func (mock *MoqGit) RevParse(repoDir string, ref string) (string, error) {
 //
 //	len(mockedGit.RevParseCalls())
 func (mock *MoqGit) RevParseCalls() []struct {
+	Ctx     context.Context
 	RepoDir string
 	Ref     string
 } {
 	var calls []struct {
+		Ctx     context.Context
 		RepoDir string
 		Ref     string
 	}

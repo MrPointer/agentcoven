@@ -5,6 +5,7 @@
 package utils
 
 import (
+	"context"
 	"sync"
 )
 
@@ -18,7 +19,7 @@ var _ Commander = &MoqCommander{}
 //
 //		// make and configure a mocked Commander
 //		mockedCommander := &MoqCommander{
-//			RunCommandFunc: func(name string, args []string, opts ...Option) (*Result, error) {
+//			RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...Option) (*Result, error) {
 //				panic("mock out the RunCommand method")
 //			},
 //		}
@@ -29,12 +30,14 @@ var _ Commander = &MoqCommander{}
 //	}
 type MoqCommander struct {
 	// RunCommandFunc mocks the RunCommand method.
-	RunCommandFunc func(name string, args []string, opts ...Option) (*Result, error)
+	RunCommandFunc func(ctx context.Context, name string, args []string, opts ...Option) (*Result, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// RunCommand holds details about calls to the RunCommand method.
 		RunCommand []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// Name is the name argument value.
 			Name string
 			// Args is the args argument value.
@@ -47,15 +50,17 @@ type MoqCommander struct {
 }
 
 // RunCommand calls RunCommandFunc.
-func (mock *MoqCommander) RunCommand(name string, args []string, opts ...Option) (*Result, error) {
+func (mock *MoqCommander) RunCommand(ctx context.Context, name string, args []string, opts ...Option) (*Result, error) {
 	if mock.RunCommandFunc == nil {
 		panic("MoqCommander.RunCommandFunc: method is nil but Commander.RunCommand was just called")
 	}
 	callInfo := struct {
+		Ctx  context.Context
 		Name string
 		Args []string
 		Opts []Option
 	}{
+		Ctx:  ctx,
 		Name: name,
 		Args: args,
 		Opts: opts,
@@ -63,7 +68,7 @@ func (mock *MoqCommander) RunCommand(name string, args []string, opts ...Option)
 	mock.lockRunCommand.Lock()
 	mock.calls.RunCommand = append(mock.calls.RunCommand, callInfo)
 	mock.lockRunCommand.Unlock()
-	return mock.RunCommandFunc(name, args, opts...)
+	return mock.RunCommandFunc(ctx, name, args, opts...)
 }
 
 // RunCommandCalls gets all the calls that were made to RunCommand.
@@ -71,11 +76,13 @@ func (mock *MoqCommander) RunCommand(name string, args []string, opts ...Option)
 //
 //	len(mockedCommander.RunCommandCalls())
 func (mock *MoqCommander) RunCommandCalls() []struct {
+	Ctx  context.Context
 	Name string
 	Args []string
 	Opts []Option
 } {
 	var calls []struct {
+		Ctx  context.Context
 		Name string
 		Args []string
 		Opts []Option
