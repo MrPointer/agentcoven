@@ -26,6 +26,8 @@ Workspaces are keyed by repository URL, not by subscription. When multiple subsc
 
 ## How Commands Use Workspaces
 
+> **Not yet implemented:** Only the `add` command's workspace behavior is currently implemented. The workspace interactions described for other commands below are planned but not yet available.
+
 ### Add
 
 [`cova add`][consuming-add] clones the workspace on first use if no existing workspace exists for the repository. If another subscription already references the same repo, the existing workspace is reused.

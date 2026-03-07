@@ -47,4 +47,15 @@ Runs tests + lint in sequence. Use before committing.
 mockery
 ```
 
-Run from the module root with no arguments after adding or modifying interfaces. Configuration is in `.mockery.yml`. Never edit generated mock files (`*_mock.go`) manually.
+Run from the module root with no arguments after adding or modifying interfaces. Configuration is in `.mockery.yml`.
+
+**NEVER edit generated mock files (`*_mock.go`) manually.** Always regenerate with `mockery`. This applies to all mock changes — adding parameters, renaming methods, updating signatures, fixing imports. No exceptions.
+
+### When `mockery` fails due to stale mocks
+
+Stale mock files frequently cause `mockery` to fail (e.g., type conflicts from old signatures). When this happens:
+
+1. Delete the stale `*_mock.go` file(s)
+2. Re-run `mockery`
+
+Do NOT attempt to fix the mock file by hand — delete and regenerate.

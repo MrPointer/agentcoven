@@ -12,11 +12,11 @@
     },
     "manifest": {
       "type": "object",
-      "required": ["org", "prefix", "team"],
+      "required": ["org", "prefix", "coven"],
       "properties": {
         "org": { "type": "string" },
         "prefix": { "type": "string" },
-        "team": { "type": "string" }
+        "coven": { "type": "string" }
       }
     },
     "blocks": {

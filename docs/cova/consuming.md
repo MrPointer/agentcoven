@@ -8,23 +8,29 @@ Consuming is how blocks from a coven repository end up in the user's agent frame
 
 `cova add <repo>` subscribes to a coven. It reads the repository's [manifest][manifest], adds a subscription entry to the [config][configuration], clones the [workspace][workspaces] (or reuses an existing one), and applies the new subscription's blocks.
 
+> **Not yet implemented:** Block application during `add` is not yet implemented — `add` currently subscribes only (creates the config entry and ensures the workspace clone). Use `cova apply` (when implemented) to place blocks on disk.
+
 `--ref` pins a specific version (tag, branch, or commit SHA). Without it, the subscription tracks the repository's default branch.
 
-### Monorepo Selection
+### Multi-coven Selection
 
-For [monorepo][monorepo] repositories, the user must specify which team(s) to subscribe to. Team names can be passed as arguments:
+For [multi-coven][multi-coven] repositories, the user must specify which coven(s) to subscribe to. Coven names can be passed as arguments:
 
 ```
 cova add github.com/acme/coven-blocks platform frontend
 ```
 
-If the repository is a monorepo and no team names are given, cova prompts the user to select interactively.
+If the repository has multiple covens and no names are given, cova prompts the user to select interactively.
 
-Each selected team becomes its own subscription entry in the config — they can be updated and removed independently.
+> **Not yet implemented:** Interactive selection is not yet implemented. Currently, if no coven names are provided for a multi-coven repository, `cova add` exits with an error listing the available coven names.
+
+Each selected coven becomes its own subscription entry in the config — they can be updated and removed independently.
 
 ---
 
 ## Updating
+
+> **Not yet implemented:** `cova update` is not yet implemented.
 
 `cova update [name...]` fetches the latest state from the remote and re-applies. Without arguments, all subscriptions are updated. With names, only the specified subscriptions are updated.
 
@@ -33,6 +39,8 @@ Update always fetches, regardless of ref type. For pinned SHAs the fetch is effe
 ---
 
 ## Applying
+
+> **Not yet implemented:** `cova apply` is not yet implemented.
 
 `cova apply` reconciles the target state (files on disk) with the desired state derived from [subscriptions][subscriptions] and [framework configuration][configuration]. No network operations — it works entirely from what's already cloned locally.
 
@@ -60,6 +68,8 @@ If two subscriptions contain a block with the same namespaced name, cova flags a
 
 ## Removing a Coven
 
+> **Not yet implemented:** `cova remove` is not yet implemented.
+
 `cova remove [name...]` unsubscribes from one or more covens. With names, those subscriptions are removed directly. Without arguments, cova prompts the user to select interactively.
 
 For each removed subscription, cova:
@@ -74,14 +84,16 @@ The [workspace][workspaces] clone is not deleted — it's cache, shared across s
 
 ## Status
 
+> **Not yet implemented:** `cova status` is not yet implemented.
+
 `cova status` shows a snapshot of what's currently subscribed and applied. No network operations — it reads from [config][configuration] and [state][state-tracking] only.
 
 ### Default Output
 
 ```
 Subscriptions:
-  platform-team   github.com/acme/coven-blocks  teams/platform  @ main
-  frontend-team   github.com/acme/coven-blocks  teams/frontend  @ v2.1.0
+  acme-platform   github.com/acme/coven-blocks  covens/platform  @ main
+  acme-frontend   github.com/acme/coven-blocks  covens/frontend  @ v2.1.0
 
 Applied: 12 blocks (8 skills, 3 rules, 1 agent)
 Frameworks: claude-code, cursor
@@ -95,10 +107,10 @@ The default view answers the most common question: what am I subscribed to, and 
 
 ```
 Subscriptions:
-  platform-team   github.com/acme/coven-blocks  teams/platform  @ main
-  frontend-team   github.com/acme/coven-blocks  teams/frontend  @ v2.1.0
+  acme-platform   github.com/acme/coven-blocks  covens/platform  @ main
+  acme-frontend   github.com/acme/coven-blocks  covens/frontend  @ v2.1.0
 
-platform-team (7 blocks):
+acme-platform (7 blocks):
   skills:
     acme-platform-code-review
     acme-platform-testing
@@ -110,7 +122,7 @@ platform-team (7 blocks):
     acme-platform-reviewer
     acme-platform-debugger
 
-frontend-team (5 blocks):
+acme-frontend (5 blocks):
   skills:
     acme-frontend-component-patterns
     acme-frontend-accessibility
@@ -123,13 +135,13 @@ frontend-team (5 blocks):
 Frameworks: claude-code, cursor
 ```
 
-Blocks are listed by name, not by file path. The grouping order — subscription then block type — matches how users think about their covens: "what did I get from the platform team?"
+Blocks are listed by name, not by file path. The grouping order — subscription then block type — matches how users think about their covens: "what did I get from the acme-platform coven?"
 
 <!-- Reference Links -->
 [subscriptions]: ../client-spec.md#subscriptions
 [naming]: ../spec.md#naming-convention
 [manifest]: ../spec.md#root-manifest
-[monorepo]: ../spec.md#monorepo
+[multi-coven]: ../spec.md#multi-coven-repository
 [configuration]: ./configuration.md
 [adapters]: ./adapters.md
 [workspaces]: ./workspaces.md

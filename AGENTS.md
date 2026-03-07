@@ -22,7 +22,7 @@ There are two distinct specs:
 
 ## Key Concepts
 
-- **Coven** — a git repository (or subdirectory in a monorepo) containing shared blocks owned by a team.
+- **Coven** — a self-contained collection of shared blocks. A git repository contains one or more covens (single-coven or multi-coven layout).
 - **Block** — a skill, rule, agent definition, or custom type. Each block is a directory within its type directory.
 - **Adapter** — a function that maps blocks to filesystem placements for a specific agent framework. Built-in for common frameworks, pluggable via external executables.
 - **Framework variant** — an optional framework-specific version of a block, used when frontmatter or content is incompatible across frameworks.

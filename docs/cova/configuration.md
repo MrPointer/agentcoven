@@ -10,14 +10,14 @@ This file is user-authored — edited directly or managed by commands like [`cov
 
 ```yaml
 subscriptions:
-  - name: platform-team
+  - name: acme-platform
     repo: github.com/acme/coven-blocks
-    path: teams/platform
+    path: covens/platform
     ref: main
 
-  - name: frontend-team
+  - name: acme-frontend
     repo: github.com/acme/coven-blocks
-    path: teams/frontend
+    path: covens/frontend
     ref: v2.1.0
 
 frameworks:
@@ -30,6 +30,8 @@ The `subscriptions` section follows the [client specification][subscriptions].
 ---
 
 ## Frameworks
+
+> **Not yet implemented:** The `frameworks` field is not yet supported in the config. Currently, the config only contains `subscriptions`. Framework configuration will be added alongside `cova apply`.
 
 | Field        | Required | Description                                                    |
 |--------------|----------|----------------------------------------------------------------|

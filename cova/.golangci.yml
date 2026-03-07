@@ -42,6 +42,7 @@ linters:
     - varnamelen # Lots of false positives of things that are fine
     - wrapcheck # Not every error must be wrapped
     - wsl # Deprecated
+    - testpackage # Goes against effective go
 
   exclusions:
     presets:
@@ -58,6 +59,9 @@ linters:
   settings:
     cyclop:
       max-complexity: 20
+
+    interfacebloat:
+      max: 15 # FileSystem covers a broad surface by design; 13 methods is reasonable.
 
     depguard:
       rules:
@@ -116,7 +120,7 @@ linters:
 
         - name: argument-limit
           arguments:
-            - 5
+            - 6 # ctx + 5 domain args is the natural maximum for context-aware functions
 
         - name: cognitive-complexity
           disabled: true # gocognit does this
@@ -163,3 +167,6 @@ linters:
 
         - name: unused-receiver
           disabled: true # As above
+
+        - name: package-naming
+          disabled: true # Utility packages imported from other projects use 'utils'; renaming is out of scope.

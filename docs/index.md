@@ -4,19 +4,19 @@ AgentCoven is **agentic AI blocks as code** — a specification for managing sha
 
 ## Problem
 
-Teams adopting AI coding agents lack a way to share building blocks while maintaining governance. Marketplace-style solutions are unsuitable for internal blocks. Vendor-specific config servers introduce lock-in and do not scale well across teams with varying needs. Custom solutions are feasible but fragile and costly to maintain.
+Teams adopting AI coding agents lack a way to share building blocks while maintaining governance. Marketplace-style solutions are unsuitable for internal blocks. Vendor-specific config servers introduce lock-in and do not scale well across organizations with varying needs. Custom solutions are feasible but fragile and costly to maintain.
 
 ## Approach
 
-AgentCoven leverages git as the backbone. Blocks are stored in a repository, changes go through pull requests, and access is controlled by the git provider. RBAC, audit trails, compliance, and team-scoped ownership are already solved by the provider — AgentCoven does not reinvent them.
+AgentCoven leverages git as the backbone. Blocks are stored in a repository, changes go through pull requests, and access is controlled by the git provider. RBAC, audit trails, compliance, and scoped ownership are already solved by the provider — AgentCoven does not reinvent them.
 
 ## How It Works
 
-1. A team creates a **coven repository** — a git repository structured according to the [AgentCoven repository specification][repo-spec]. It contains the team's shared blocks: skills, agents, rules, and any custom types. Organizations with multiple teams may use a single repository with a [monorepo][monorepo] layout.
-2. Users **subscribe** to one or more teams via a [local configuration][local-config].
-3. A compliant implementation **applies** blocks from subscribed teams to the user's local filesystem, translating them to the format expected by their agent framework.
+1. A team creates a **coven repository** — a git repository structured according to the [AgentCoven repository specification][repo-spec]. It contains shared blocks: skills, agents, rules, and any custom types. Organizations may host multiple covens in a single repository using a [multi-coven][multi-coven] layout.
+2. Users **subscribe** to one or more covens via a [local configuration][local-config].
+3. A compliant implementation **applies** blocks from subscribed covens to the user's local filesystem, translating them to the format expected by their agent framework.
 
-Blocks are [namespaced][naming] to ensure coexistence across teams and organizations. The user's own blocks are never touched.
+Blocks are [namespaced][naming] to ensure coexistence across covens and organizations. The user's own blocks are never touched.
 
 ## Documentation
 
@@ -29,5 +29,5 @@ Blocks are [namespaced][naming] to ensure coexistence across teams and organizat
 [client-spec]: ./client-spec.md
 [cova]: ./cova/index.md
 [local-config]: ./client-spec.md#subscriptions
-[monorepo]: ./spec.md#monorepo
+[multi-coven]: ./spec.md#multi-coven-repository
 [naming]: ./spec.md#naming-convention
