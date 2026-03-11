@@ -31,15 +31,11 @@
   "$defs": {
     "manifest": {
       "type": "object",
-      "required": ["org", "prefix", "coven"],
+      "required": ["org", "coven"],
       "properties": {
         "org": {
           "type": "string",
           "description": "Organization name from the coven manifest."
-        },
-        "prefix": {
-          "type": "string",
-          "description": "Naming prefix from the coven manifest."
         },
         "coven": {
           "type": "string",
