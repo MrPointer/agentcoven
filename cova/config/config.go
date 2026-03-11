@@ -27,6 +27,7 @@ const (
 // Config represents the top-level cova configuration.
 type Config struct {
 	Subscriptions []Subscription `yaml:"subscriptions,omitempty"`
+	Frameworks    []string       `yaml:"frameworks,omitempty"`
 }
 
 // Subscription represents a single coven subscription entry.
