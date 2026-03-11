@@ -41,8 +41,9 @@ Global dependencies are initialized via `cobra.OnInitialize()` in `root.go`. Eac
 
 ## Error Handling in Commands
 
-- Use `Run` (not `RunE`) — handle errors inline and exit with `os.Exit(1)`
-- Keep `Run` functions thin — delegate to business logic in `lib/`
+- Use `RunE` (not `Run`) — return errors from the function; Cobra handles display and exit
+- Set `SilenceUsage: true` on the root command so runtime errors don't print usage
+- Keep `RunE` functions thin — delegate to business logic packages
 
 ## Signal Handling and Cleanup
 
