@@ -26,7 +26,7 @@ Workspaces are keyed by repository URL, not by subscription. When multiple subsc
 
 ## How Commands Use Workspaces
 
-> **Not yet implemented:** Only the `add` command's workspace behavior is currently implemented. The workspace interactions described for other commands below are planned but not yet available.
+> **Partial implementation:** Workspace behavior for `add` and `apply` is implemented. The workspace interactions described for other commands below are planned but not yet available.
 
 ### Add
 

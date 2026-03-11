@@ -6,9 +6,7 @@ Consuming is how blocks from a coven repository end up in the user's agent frame
 
 ## Adding a Coven
 
-`cova add <repo>` subscribes to a coven. It reads the repository's [manifest][manifest], adds a subscription entry to the [config][configuration], clones the [workspace][workspaces] (or reuses an existing one), and applies the new subscription's blocks.
-
-> **Not yet implemented:** Block application during `add` is not yet implemented — `add` currently subscribes only (creates the config entry and ensures the workspace clone). Use `cova apply` (when implemented) to place blocks on disk.
+`cova add <repo>` subscribes to a coven. It reads the repository's [manifest][manifest], adds a subscription entry to the [config][configuration], clones the [workspace][workspaces] (or reuses an existing one), and applies the new subscription's blocks to disk automatically.
 
 `--ref` pins a specific version (tag, branch, or commit SHA). Without it, the subscription tracks the repository's default branch.
 
@@ -39,8 +37,6 @@ Update always fetches, regardless of ref type. For pinned SHAs the fetch is effe
 ---
 
 ## Applying
-
-> **Not yet implemented:** `cova apply` is not yet implemented.
 
 `cova apply` reconciles the target state (files on disk) with the desired state derived from [subscriptions][subscriptions] and [framework configuration][configuration]. No network operations — it works entirely from what's already cloned locally.
 
