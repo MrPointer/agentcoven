@@ -20,6 +20,9 @@ var _ FileSystem = &MoqFileSystem{}
 //
 //		// make and configure a mocked FileSystem
 //		mockedFileSystem := &MoqFileSystem{
+//			CopyFileFunc: func(src string, dst string) (int64, error) {
+//				panic("mock out the CopyFile method")
+//			},
 //			CreateDirectoryFunc: func(path string) error {
 //				panic("mock out the CreateDirectory method")
 //			},
@@ -66,6 +69,9 @@ var _ FileSystem = &MoqFileSystem{}
 //
 //	}
 type MoqFileSystem struct {
+	// CopyFileFunc mocks the CopyFile method.
+	CopyFileFunc func(src string, dst string) (int64, error)
+
 	// CreateDirectoryFunc mocks the CreateDirectory method.
 	CreateDirectoryFunc func(path string) error
 
@@ -107,6 +113,13 @@ type MoqFileSystem struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// CopyFile holds details about calls to the CopyFile method.
+		CopyFile []struct {
+			// Src is the src argument value.
+			Src string
+			// Dst is the dst argument value.
+			Dst string
+		}
 		// CreateDirectory holds details about calls to the CreateDirectory method.
 		CreateDirectory []struct {
 			// Path is the path argument value.
@@ -183,6 +196,7 @@ type MoqFileSystem struct {
 			Reader io.Reader
 		}
 	}
+	lockCopyFile                       sync.RWMutex
 	lockCreateDirectory                sync.RWMutex
 	lockCreateDirectoryWithPermissions sync.RWMutex
 	lockCreateFile                     sync.RWMutex
@@ -196,6 +210,42 @@ type MoqFileSystem struct {
 	lockRemovePath                     sync.RWMutex
 	lockRename                         sync.RWMutex
 	lockWriteFile                      sync.RWMutex
+}
+
+// CopyFile calls CopyFileFunc.
+func (mock *MoqFileSystem) CopyFile(src string, dst string) (int64, error) {
+	if mock.CopyFileFunc == nil {
+		panic("MoqFileSystem.CopyFileFunc: method is nil but FileSystem.CopyFile was just called")
+	}
+	callInfo := struct {
+		Src string
+		Dst string
+	}{
+		Src: src,
+		Dst: dst,
+	}
+	mock.lockCopyFile.Lock()
+	mock.calls.CopyFile = append(mock.calls.CopyFile, callInfo)
+	mock.lockCopyFile.Unlock()
+	return mock.CopyFileFunc(src, dst)
+}
+
+// CopyFileCalls gets all the calls that were made to CopyFile.
+// Check the length with:
+//
+//	len(mockedFileSystem.CopyFileCalls())
+func (mock *MoqFileSystem) CopyFileCalls() []struct {
+	Src string
+	Dst string
+} {
+	var calls []struct {
+		Src string
+		Dst string
+	}
+	mock.lockCopyFile.RLock()
+	calls = mock.calls.CopyFile
+	mock.lockCopyFile.RUnlock()
+	return calls
 }
 
 // CreateDirectory calls CreateDirectoryFunc.
