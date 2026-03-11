@@ -28,7 +28,7 @@ func newDeps(t *testing.T) add.Deps {
 		Logger:      log,
 		FileSystem:  fs,
 		Locker:      utils.NewDefaultLocker(),
-		Git:         workspace.NewDefaultGit(cmdr),
+		Git:         workspace.NewDefaultGit(cmdr, fs),
 		EnvManager:  osMgr,
 		UserManager: osMgr,
 	}

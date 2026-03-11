@@ -136,7 +136,7 @@ func TestDefaultGit_CloningRepoShouldCallGitClone(t *testing.T) {
 			return &utils.Result{}, nil
 		},
 	}
-	git := workspace.NewDefaultGit(commander)
+	git := workspace.NewDefaultGit(commander, &utils.MoqFileSystem{})
 
 	err := git.Clone(t.Context(), "https://github.com/acme/blocks.git", "/workspace/path")
 
@@ -150,7 +150,7 @@ func TestDefaultGit_CloningRepoShouldReturnErrorWhenCommandFails(t *testing.T) {
 			return nil, errors.New("clone failed")
 		},
 	}
-	git := workspace.NewDefaultGit(commander)
+	git := workspace.NewDefaultGit(commander, &utils.MoqFileSystem{})
 
 	err := git.Clone(t.Context(), "https://github.com/acme/blocks.git", "/workspace/path")
 
@@ -167,7 +167,7 @@ func TestDefaultGit_FetchingRepoShouldCallGitFetch(t *testing.T) {
 			return &utils.Result{}, nil
 		},
 	}
-	git := workspace.NewDefaultGit(commander)
+	git := workspace.NewDefaultGit(commander, &utils.MoqFileSystem{})
 
 	err := git.Fetch(t.Context(), "/workspace/path")
 
@@ -181,7 +181,7 @@ func TestDefaultGit_FetchingRepoShouldReturnErrorWhenCommandFails(t *testing.T) 
 			return nil, errors.New("fetch failed")
 		},
 	}
-	git := workspace.NewDefaultGit(commander)
+	git := workspace.NewDefaultGit(commander, &utils.MoqFileSystem{})
 
 	err := git.Fetch(t.Context(), "/workspace/path")
 
@@ -198,7 +198,7 @@ func TestDefaultGit_RevParsingRefShouldReturnCommitHash(t *testing.T) {
 			return &utils.Result{Stdout: []byte("abc123\n")}, nil
 		},
 	}
-	git := workspace.NewDefaultGit(commander)
+	git := workspace.NewDefaultGit(commander, &utils.MoqFileSystem{})
 
 	hash, err := git.RevParse(t.Context(), "/workspace/path", "v1.0.0")
 
@@ -212,7 +212,7 @@ func TestDefaultGit_RevParsingRefShouldReturnErrorWhenCommandFails(t *testing.T)
 			return nil, errors.New("unknown ref")
 		},
 	}
-	git := workspace.NewDefaultGit(commander)
+	git := workspace.NewDefaultGit(commander, &utils.MoqFileSystem{})
 
 	_, err := git.RevParse(t.Context(), "/workspace/path", "nonexistent")
 
@@ -229,7 +229,7 @@ func TestDefaultGit_CheckingOutRefShouldCallGitCheckout(t *testing.T) {
 			return &utils.Result{}, nil
 		},
 	}
-	git := workspace.NewDefaultGit(commander)
+	git := workspace.NewDefaultGit(commander, &utils.MoqFileSystem{})
 
 	err := git.Checkout(t.Context(), "/workspace/path", "v1.0.0")
 
@@ -243,7 +243,7 @@ func TestDefaultGit_CheckingOutRefShouldReturnErrorWhenCommandFails(t *testing.T
 			return nil, errors.New("checkout failed")
 		},
 	}
-	git := workspace.NewDefaultGit(commander)
+	git := workspace.NewDefaultGit(commander, &utils.MoqFileSystem{})
 
 	err := git.Checkout(t.Context(), "/workspace/path", "v1.0.0")
 

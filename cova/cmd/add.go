@@ -31,7 +31,7 @@ For multi-coven repositories, you must specify which covens to subscribe to.`,
 		commander := utils.NewDefaultCommander(log)
 		locker := utils.NewDefaultLocker()
 		osManager := osmanager.NewDefaultOsManager(log, commander, fs)
-		git := workspace.NewDefaultGit(commander)
+		git := workspace.NewDefaultGit(commander, fs)
 
 		deps := add.Deps{
 			Logger:      log,
