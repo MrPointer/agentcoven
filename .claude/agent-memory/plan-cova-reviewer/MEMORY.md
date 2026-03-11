@@ -18,10 +18,16 @@
 - `osmanager.EnvironmentManager` — `Getenv(key string) string`
 - Mock files: `cova/utils/FileSystem_mock.go`, `cova/utils/commander_mock.go`
 
-## Packages Not Yet Created (cova-add-v2)
-- `cova/config/` — config package (sub-plan 03)
-- `cova/lib/` — no lib packages exist yet
-- `cova/utils/locker.go` — Locker interface (sub-plan 01, prerequisite for 03)
+## Packages Created (cova-add)
+- `cova/config/` — config package with `Config`, `Subscription`, `Load`, `Save`, `UpsertSubscription`, `DefaultPath`
+- `cova/workspace/` — `Git` interface (Clone, Fetch, RevParse, Checkout), `Ensure`, `NormalizeURL`, `DefaultBasePath`
+- `cova/utils/locker.go` — Locker interface
+
+## Packages Created (cova-apply)
+- `cova/state/` — SQLite state tracking (BlockStore interface, SQLiteBlockStore)
+- `cova/block/` — block discovery + variant resolution (Discover, ResolveVariant)
+- `cova/adapter/` — Dispatcher interface, Claude Code built-in, external JSON transport
+- `cova/apply/` — apply orchestration (Deps + Run pattern, conflict detection, orphan cleanup)
 
 ## Specs
 - Repo spec: `docs/spec.md` — manifest structure, naming convention, block types, variants
@@ -49,7 +55,7 @@
 
 ## CLI Conventions (from developing-cli-apps skill)
 - Cobra commands in `cmd/`, one file per command
-- `Run` not `RunE`, handle errors inline
+- `RunE` not `Run`, `SilenceUsage: true` on root
 - Flags: kebab-case, bind to Viper
 
 ## Known Doc Issues
@@ -65,15 +71,28 @@
 ## URL Normalization
 - Must handle: https://, http://, file:// prefixes; .git suffix; trailing slashes; host case-insensitivity
 
-## Skills Inventory
-- Existing: writing-go-code, applying-effective-go, developing-cli-apps, writing-go-tests
-- NOT existing: documenting-components (referenced in 07-documentation sub-plan but absent from `.claude/skills/`)
-- NOT existing: testing-go-code (referenced in sub-plan 06 but absent from `.claude/skills/`)
+## Skills Inventory (confirmed 2026-03-09)
+- Existing: writing-go-code, applying-effective-go, developing-cli-apps, writing-go-tests, testing-go-code, linting-go-code, building-go-binaries
+- NOT existing: documenting-components, documenting-architecture (referenced in opus-docs-worker agent but absent from `.claude/skills/`)
+
+## Key Interface Signatures (gotcha-prone)
+- `FileSystem.WriteFile(path string, reader io.Reader) (int64, error)` — takes io.Reader, NOT []byte; callers need `bytes.NewReader` wrapping
+- `FileSystem.ReadFileContents(path string) ([]byte, error)` — returns []byte
+- `FileSystem.ReadDirectory(path string) ([]os.DirEntry, error)` — for listing directory contents
+- `osmanager.ProgramQuery.GetProgramPath(program string) (string, error)` — for finding executables on $PATH
+
+## Adapter Protocol Schema Details
+- `schemas/adapter/apply-request.schema.json` — manifest has `org` and `coven` (required); `prefix` was removed
+- `workspace` field schema description: "Absolute path to the workspace root for this subscription's repository" — NOT coven root
+- `client-spec.md` adapter examples do NOT contain `prefix` (already clean); only the JSON schema file has it
+- Block `source` in request: relative to coven root; placement `source` in response: relative to workspace root
 
 ## Review Patterns
 - Sub-plans may deviate from docs (e.g., consuming.md says interactive prompt for multi-coven no-args, but sub-plan 05 chose error instead) — always cross-check
 - Check skill references in sub-plans against actual `.claude/skills/` contents
 - Test conventions: unit tests use `testing.Short()` for opt-out per writing-go-tests skill; build tags are a different pattern
-- Watch for `RunE` vs `Run` — CLI skill mandates `Run`, sub-plans sometimes use `RunE` terminology
-- Master plan (00-master.md) explicitly scopes out: apply, adapters, state DB, frameworks, interactive UI
+- CLI now uses `RunE` with `SilenceUsage: true` (skill updated)
+- Master plan (00-master.md for cova-add) explicitly scoped out: apply, adapters, state DB, frameworks, interactive UI
 - Multi-coven without args: error (not prompt) is intentional per master plan scope, but contradicts consuming.md
+- Watch for `workspace` field semantics drift — plans may redefine it as coven root vs repo root
+- Watch for callback error handling in command integration — add succeeds but apply fails is a confusing UX scenario

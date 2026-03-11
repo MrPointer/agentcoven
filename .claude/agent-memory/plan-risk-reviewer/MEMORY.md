@@ -26,4 +26,11 @@
 - Subscription name uniqueness is NOT explicitly scoped in the spec -- ambiguous whether name must be globally unique or name+repo unique
 - `consuming.md` describes `add` as also applying blocks + interactive prompts -- both are future scope, not current implementation
 
-See also: [cova-add-v2-review.md](cova-add-v2-review.md) for detailed first review findings.
+### API Surface Notes
+- FileSystem.WriteFile takes io.Reader (not []byte) -- agents need bytes.NewReader wrapper
+- FileSystem.ReadFileContents returns []byte
+- config.Subscription has Name/Repo/Path/Ref but NOT org or coven separately
+- manifest.Parse reads from repo root, returns RootManifest{Org, Covens, IsSingleCoven()}
+- workspace.Ensure always does clone-or-fetch (no local-only mode exists)
+
+See also: [cova-add-v2-review.md](cova-add-v2-review.md) for cova-add review findings
