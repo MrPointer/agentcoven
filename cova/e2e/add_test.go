@@ -76,7 +76,7 @@ func TestAdd_AddingSingleCovenRepoShouldCreateCorrectSubscription(t *testing.T) 
 	repoDir := createSingleCovenRepo(t, "acme", "blocks")
 	deps := newDeps(t)
 
-	err := add.Run(t.Context(), deps, fileURL(repoDir), nil, "")
+	err := add.Run(t.Context(), deps, fileURL(repoDir), nil, "", false)
 	require.NoError(t, err)
 
 	cfg := loadConfig(t)
@@ -97,7 +97,7 @@ func TestAdd_AddingSingleCovenRepoWithExtraCovenArgsShouldIgnoreThem(t *testing.
 	repoDir := createSingleCovenRepo(t, "acme", "blocks")
 	deps := newDeps(t)
 
-	err := add.Run(t.Context(), deps, fileURL(repoDir), []string{"extra1", "extra2"}, "")
+	err := add.Run(t.Context(), deps, fileURL(repoDir), []string{"extra1", "extra2"}, "", false)
 	require.NoError(t, err)
 
 	cfg := loadConfig(t)
@@ -115,7 +115,7 @@ func TestAdd_AddingMultiCovenRepoWithCovenArgsShouldCreateSubscriptionsWithPaths
 	repoDir := createMultiCovenRepo(t, "acme", []string{"platform", "frontend", "backend"})
 	deps := newDeps(t)
 
-	err := add.Run(t.Context(), deps, fileURL(repoDir), []string{"platform", "frontend"}, "")
+	err := add.Run(t.Context(), deps, fileURL(repoDir), []string{"platform", "frontend"}, "", false)
 	require.NoError(t, err)
 
 	cfg := loadConfig(t)
@@ -138,7 +138,7 @@ func TestAdd_AddingMultiCovenRepoWithoutCovenArgsShouldReturnError(t *testing.T)
 	repoDir := createMultiCovenRepo(t, "acme", []string{"platform", "frontend"})
 	deps := newDeps(t)
 
-	err := add.Run(t.Context(), deps, fileURL(repoDir), nil, "")
+	err := add.Run(t.Context(), deps, fileURL(repoDir), nil, "", false)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "multiple covens")
 	require.Contains(t, err.Error(), "platform")
@@ -155,8 +155,8 @@ func TestAdd_AddingSameRepoTwiceShouldBeNoOp(t *testing.T) {
 	repoDir := createSingleCovenRepo(t, "acme", "blocks")
 	deps := newDeps(t)
 
-	require.NoError(t, add.Run(t.Context(), deps, fileURL(repoDir), nil, ""))
-	require.NoError(t, add.Run(t.Context(), deps, fileURL(repoDir), nil, ""))
+	require.NoError(t, add.Run(t.Context(), deps, fileURL(repoDir), nil, "", false))
+	require.NoError(t, add.Run(t.Context(), deps, fileURL(repoDir), nil, "", false))
 
 	cfg := loadConfig(t)
 	require.Len(t, cfg.Subscriptions, 1)
@@ -175,8 +175,8 @@ func TestAdd_AddingSameRepoWithDifferentRefShouldUpdateSubscription(t *testing.T
 
 	deps := newDeps(t)
 
-	require.NoError(t, add.Run(t.Context(), deps, fileURL(repoDir), nil, ""))
-	require.NoError(t, add.Run(t.Context(), deps, fileURL(repoDir), nil, "v1.0.0"))
+	require.NoError(t, add.Run(t.Context(), deps, fileURL(repoDir), nil, "", false))
+	require.NoError(t, add.Run(t.Context(), deps, fileURL(repoDir), nil, "v1.0.0", false))
 
 	cfg := loadConfig(t)
 	require.Len(t, cfg.Subscriptions, 1)
@@ -198,7 +198,7 @@ func TestAdd_AddingWithRefFlagShouldRecordRefInSubscription(t *testing.T) {
 
 	deps := newDeps(t)
 
-	err := add.Run(t.Context(), deps, fileURL(repoDir), nil, "v2.0.0")
+	err := add.Run(t.Context(), deps, fileURL(repoDir), nil, "v2.0.0", false)
 	require.NoError(t, err)
 
 	cfg := loadConfig(t)
@@ -215,6 +215,6 @@ func TestAdd_AddingInvalidRepoURLShouldReturnError(t *testing.T) {
 
 	deps := newDeps(t)
 
-	err := add.Run(t.Context(), deps, "not-a-valid-url", nil, "")
+	err := add.Run(t.Context(), deps, "not-a-valid-url", nil, "", false)
 	require.Error(t, err)
 }
