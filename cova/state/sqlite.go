@@ -23,27 +23,27 @@ const (
 		subscription TEXT NOT NULL,
 		source        TEXT NOT NULL,
 		block_type    TEXT NOT NULL,
-		framework     TEXT NOT NULL,
+		agent     TEXT NOT NULL,
 		checksum      TEXT NOT NULL DEFAULT ''
 	)`
 
 	// upsertSQL inserts or replaces a record.
-	upsertSQL = `INSERT INTO blocks (path, subscription, source, block_type, framework, checksum)
+	upsertSQL = `INSERT INTO blocks (path, subscription, source, block_type, agent, checksum)
 		VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT(path) DO UPDATE SET
 			subscription = excluded.subscription,
 			source        = excluded.source,
 			block_type    = excluded.block_type,
-			framework     = excluded.framework,
+			agent     = excluded.agent,
 			checksum      = excluded.checksum`
 
 	// queryByPathSQL selects a single record by path.
-	queryByPathSQL = `SELECT path, subscription, source, block_type, framework, checksum
+	queryByPathSQL = `SELECT path, subscription, source, block_type, agent, checksum
 		FROM blocks WHERE path = ?`
 
-	// queryBySubFrameworkSQL selects all records for a subscription+framework.
-	queryBySubFrameworkSQL = `SELECT path, subscription, source, block_type, framework, checksum
-		FROM blocks WHERE subscription = ? AND framework = ?`
+	// queryBySubAgentSQL selects all records for a subscription+agent.
+	queryBySubAgentSQL = `SELECT path, subscription, source, block_type, agent, checksum
+		FROM blocks WHERE subscription = ? AND agent = ?`
 )
 
 // SQLiteBlockStore is a BlockStore backed by a SQLite database.
@@ -146,7 +146,7 @@ func (s *SQLiteBlockStore) QueryBySubscriptionAgent(
 	ctx context.Context,
 	subscription, agent string,
 ) ([]Record, error) {
-	rows, err := s.db.QueryContext(ctx, queryBySubFrameworkSQL, subscription, agent)
+	rows, err := s.db.QueryContext(ctx, queryBySubAgentSQL, subscription, agent)
 	if err != nil {
 		return nil, fmt.Errorf("querying records for subscription %q agent %q: %w", subscription, agent, err)
 	}
