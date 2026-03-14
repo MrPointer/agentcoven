@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/MrPointer/agentcoven/cova/adapter"
 	"github.com/MrPointer/agentcoven/cova/apply"
 	"github.com/MrPointer/agentcoven/cova/config"
+	"github.com/MrPointer/agentcoven/cova/exporter"
 	"github.com/MrPointer/agentcoven/cova/manifest"
 	"github.com/MrPointer/agentcoven/cova/state"
 	"github.com/MrPointer/agentcoven/cova/utils"
@@ -24,7 +24,7 @@ type Deps struct {
 	Locker      utils.Locker
 	Git         workspace.Git
 	BlockStore  state.BlockStore
-	Dispatcher  adapter.Dispatcher
+	Dispatcher  exporter.Dispatcher
 	EnvManager  osmanager.EnvironmentManager
 	UserManager osmanager.UserManager
 }

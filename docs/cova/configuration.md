@@ -20,7 +20,7 @@ subscriptions:
     path: covens/frontend
     ref: v2.1.0
 
-frameworks:
+agents:
   - claude-code
   - cursor
 ```
@@ -29,19 +29,19 @@ The `subscriptions` section follows the [client specification][subscriptions].
 
 ---
 
-## Frameworks
+## Agents
 
-| Field        | Required | Description                                                    |
-|--------------|----------|----------------------------------------------------------------|
-| `frameworks` | No       | List of target agent frameworks to apply blocks to. If omitted, cova detects installed frameworks or prompts the user. |
+| Field    | Required | Description                                                    |
+|----------|----------|----------------------------------------------------------------|
+| `agents` | No       | List of target agents to apply blocks to. If omitted, cova detects installed agents or prompts the user. |
 
-Every entry in `frameworks` must match a known [adapter][adapters]. cova validates this list before applying and rejects unknown identifiers with a clear error — no partial application, no guessing.
+Every entry in `agents` must match a known [exporter][exporters]. cova validates this list before applying and rejects unknown identifiers with a clear error — no partial application, no guessing.
 
-> **Manual editing required:** Frameworks are currently managed by editing `config.yaml` directly. A dedicated command (e.g., `cova framework add/remove`) to add and remove framework entries interactively is planned as future work.
+> **Manual editing required:** Agents are currently managed by editing `config.yaml` directly. A dedicated command (e.g., `cova agent add/remove`) to add and remove agent entries interactively is planned as future work.
 
 <!-- Reference Links -->
 [local-config]: ../client-spec.md#local-configuration
 [subscriptions]: ../client-spec.md#subscriptions
-[adapters]: ./adapters.md
+[exporters]: ./exporters.md
 [consuming-add]: ./consuming.md#adding-a-coven
 [consuming-remove]: ./consuming.md#removing-a-coven

@@ -35,7 +35,7 @@ Each applied block is a row in the `blocks` table:
 | `subscription` | TEXT   | Name of the subscription that owns this block.                     |
 | `source`       | TEXT   | Path of the block within the coven repository.                     |
 | `block_type`   | TEXT   | Block type (e.g., `skills`, `rules`, `agents`).                    |
-| `framework`    | TEXT   | Target framework the block was applied to (e.g., `claude-code`).   |
+| `agent`        | TEXT   | Target agent the block was applied to (e.g., `claude-code`).       |
 | `checksum`     | TEXT   | SHA-256 hash of the applied file contents.                         |
 
 The `path` column is the primary key — each target file maps to exactly one source block.

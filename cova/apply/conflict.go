@@ -26,7 +26,7 @@ const (
 // checkConflict determines whether it is safe to write to targetPath.
 //
 // It returns conflictKindNew when the path does not exist.
-// It returns conflictKindUpdate when the path is owned by the same subscription+framework.
+// It returns conflictKindUpdate when the path is owned by the same subscription+agent.
 // It returns conflictKindUserFile when the path exists but has no state record.
 // It returns conflictKindCrossSubscription when the path is owned by a different subscription.
 func checkConflict(
@@ -35,7 +35,7 @@ func checkConflict(
 	store state.BlockStore,
 	targetPath string,
 	subscription string,
-	framework string,
+	agent string,
 ) (conflictKind, error) {
 	exists, err := fs.PathExists(targetPath)
 	if err != nil {
@@ -55,7 +55,7 @@ func checkConflict(
 		return 0, err
 	}
 
-	if rec.Subscription == subscription && rec.Framework == framework {
+	if rec.Subscription == subscription && rec.Agent == agent {
 		return conflictKindUpdate, nil
 	}
 

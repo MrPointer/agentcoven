@@ -1,4 +1,4 @@
-package adapter
+package exporter
 
 import (
 	"context"
@@ -15,23 +15,23 @@ var supportedClaudeCodeTypes = map[string]string{
 	"agents": "agents",
 }
 
-// claudeCodeAdapter is the built-in adapter for the Claude Code framework.
-type claudeCodeAdapter struct {
+// claudeCodeExporter is the built-in exporter for the Claude Code agent.
+type claudeCodeExporter struct {
 	fs      utils.FileSystem
 	homeDir string
 }
 
-var _ adapter = (*claudeCodeAdapter)(nil)
+var _ exporter = (*claudeCodeExporter)(nil)
 
-// newClaudeCodeAdapter creates a Claude Code adapter.
+// newClaudeCodeExporter creates a Claude Code exporter.
 // homeDir is the user's home directory, used to build absolute target paths.
-func newClaudeCodeAdapter(fs utils.FileSystem, homeDir string) *claudeCodeAdapter {
-	return &claudeCodeAdapter{fs: fs, homeDir: homeDir}
+func newClaudeCodeExporter(fs utils.FileSystem, homeDir string) *claudeCodeExporter {
+	return &claudeCodeExporter{fs: fs, homeDir: homeDir}
 }
 
 // apply computes file placements for all blocks in the request.
 // Unsupported block types produce a per-block error result and do not abort processing.
-func (a *claudeCodeAdapter) apply(_ context.Context, req *ApplyRequest) (*ApplyResponse, error) {
+func (a *claudeCodeExporter) apply(_ context.Context, req *ApplyRequest) (*ApplyResponse, error) {
 	var results []BlockResult
 
 	for blockType, blocks := range req.Blocks {
@@ -39,7 +39,7 @@ func (a *claudeCodeAdapter) apply(_ context.Context, req *ApplyRequest) (*ApplyR
 
 		for _, b := range blocks {
 			if !supported {
-				errMsg := fmt.Sprintf("block type %q is not supported by the claude-code adapter", blockType)
+				errMsg := fmt.Sprintf("block type %q is not supported by the claude-code exporter", blockType)
 				results = append(results, BlockResult{
 					Name:  b.Name,
 					Error: &errMsg,
@@ -62,7 +62,7 @@ func (a *claudeCodeAdapter) apply(_ context.Context, req *ApplyRequest) (*ApplyR
 
 // buildBlockResult lists the files inside the block's source directory and
 // constructs a placement for each one.
-func (a *claudeCodeAdapter) buildBlockResult(workspace, subDir string, b RequestBlock) (BlockResult, error) {
+func (a *claudeCodeExporter) buildBlockResult(workspace, subDir string, b RequestBlock) (BlockResult, error) {
 	blockSourceAbs := filepath.Join(workspace, b.Source)
 
 	entries, err := a.fs.ReadDirectory(blockSourceAbs)

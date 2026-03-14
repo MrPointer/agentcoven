@@ -8,7 +8,7 @@ var rootCmd = &cobra.Command{
 	Short: "Reference CLI for the AgentCoven specification",
 	Long: `cova is the reference implementation of the AgentCoven client specification.
 It applies shared AI agent building blocks — skills, rules, agents — from coven
-repositories to your local filesystem, translating them for your agent framework.`,
+repositories to your local filesystem, translating them for your agent.`,
 	SilenceUsage: true,
 }
 

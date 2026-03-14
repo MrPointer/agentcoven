@@ -1,10 +1,10 @@
 # cova
 
-cova is the reference implementation of the [client specification][client-spec]. It's a CLI tool written in Go that applies blocks from coven repositories to the user's local filesystem, translating them to the format expected by whatever agent framework the user runs.
+cova is the reference implementation of the [client specification][client-spec]. It's a CLI tool written in Go that applies blocks from coven repositories to the user's local filesystem, translating them to the format expected by whatever agent the user runs.
 
 Think of it like chezmoi for AI building blocks: a declarative source state in git, an applied target state on disk, and a CLI that reconciles between them.
 
-> **Implementation status:** cova is under active development. Currently, `cova add` and `cova apply` are implemented — `add` subscribes to coven repositories and automatically applies blocks to disk, while `apply` reconciles locally on demand. Framework adapter support is available (Claude Code built-in). Other commands (`update`, `remove`, `status`, `package`, `submit`) are planned but not yet available.
+> **Implementation status:** cova is under active development. Currently, `cova add` and `cova apply` are implemented — `add` subscribes to coven repositories and automatically applies blocks to disk, while `apply` reconciles locally on demand. Exporter support is available (Claude Code built-in). Other commands (`update`, `remove`, `status`, `package`, `submit`) are planned but not yet available.
 
 ---
 
@@ -28,7 +28,7 @@ cova maintains local clones of subscribed coven repositories under the XDG cache
 
 ## Configuration
 
-The user's subscriptions and framework preferences live in a YAML config file under `$XDG_CONFIG_HOME`. See [Configuration][configuration] for the full structure.
+The user's subscriptions and agent preferences live in a YAML config file under `$XDG_CONFIG_HOME`. See [Configuration][configuration] for the full structure.
 
 ---
 

@@ -110,7 +110,7 @@ func (s *SQLiteBlockStore) RecordBatch(ctx context.Context, records []Record) er
 			r.Subscription,
 			r.Source,
 			r.BlockType,
-			r.Framework,
+			r.Agent,
 			r.Checksum,
 		); err != nil {
 			return fmt.Errorf("upserting record %q: %w", r.Path, errors.Join(err, tx.Rollback()))
@@ -130,7 +130,7 @@ func (s *SQLiteBlockStore) QueryByPath(ctx context.Context, path string) (*Recor
 	row := s.db.QueryRowContext(ctx, queryByPathSQL, path)
 
 	var r Record
-	if err := row.Scan(&r.Path, &r.Subscription, &r.Source, &r.BlockType, &r.Framework, &r.Checksum); err != nil {
+	if err := row.Scan(&r.Path, &r.Subscription, &r.Source, &r.BlockType, &r.Agent, &r.Checksum); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -141,14 +141,14 @@ func (s *SQLiteBlockStore) QueryByPath(ctx context.Context, path string) (*Recor
 	return &r, nil
 }
 
-// QueryBySubscriptionFramework returns all records for the given subscription and framework.
-func (s *SQLiteBlockStore) QueryBySubscriptionFramework(
+// QueryBySubscriptionAgent returns all records for the given subscription and agent.
+func (s *SQLiteBlockStore) QueryBySubscriptionAgent(
 	ctx context.Context,
-	subscription, framework string,
+	subscription, agent string,
 ) ([]Record, error) {
-	rows, err := s.db.QueryContext(ctx, queryBySubFrameworkSQL, subscription, framework)
+	rows, err := s.db.QueryContext(ctx, queryBySubFrameworkSQL, subscription, agent)
 	if err != nil {
-		return nil, fmt.Errorf("querying records for subscription %q framework %q: %w", subscription, framework, err)
+		return nil, fmt.Errorf("querying records for subscription %q agent %q: %w", subscription, agent, err)
 	}
 
 	defer rows.Close()
@@ -157,7 +157,7 @@ func (s *SQLiteBlockStore) QueryBySubscriptionFramework(
 
 	for rows.Next() {
 		var r Record
-		if err := rows.Scan(&r.Path, &r.Subscription, &r.Source, &r.BlockType, &r.Framework, &r.Checksum); err != nil {
+		if err := rows.Scan(&r.Path, &r.Subscription, &r.Source, &r.BlockType, &r.Agent, &r.Checksum); err != nil {
 			return nil, fmt.Errorf("scanning record: %w", err)
 		}
 

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/MrPointer/agentcoven/cova/adapter"
 	"github.com/MrPointer/agentcoven/cova/block"
 	"github.com/MrPointer/agentcoven/cova/config"
+	"github.com/MrPointer/agentcoven/cova/exporter"
 	"github.com/MrPointer/agentcoven/cova/manifest"
 	"github.com/MrPointer/agentcoven/cova/state"
 	"github.com/MrPointer/agentcoven/cova/utils"
@@ -24,13 +24,13 @@ type Deps struct {
 	Locker      utils.Locker
 	Git         workspace.Git
 	BlockStore  state.BlockStore
-	Dispatcher  adapter.Dispatcher
+	Dispatcher  exporter.Dispatcher
 	EnvManager  osmanager.EnvironmentManager
 	UserManager osmanager.UserManager
 }
 
-// Run orchestrates the apply command: loads config, validates frameworks, and for each subscription
-// creates a worktree, discovers blocks, resolves variants, invokes adapters, detects conflicts,
+// Run orchestrates the apply command: loads config, validates agents, and for each subscription
+// creates a worktree, discovers blocks, resolves variants, invokes exporters, detects conflicts,
 // copies files, records state, and cleans up orphans.
 //
 // If subscriptionNames is empty, all subscriptions in config are applied.
@@ -46,8 +46,8 @@ func Run(ctx context.Context, deps Deps, subscriptionNames []string) error {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
-	if len(cfg.Frameworks) == 0 {
-		return errors.New("no frameworks configured; add at least one framework to your config")
+	if len(cfg.Agents) == 0 {
+		return errors.New("no agents configured; add at least one agent to your config")
 	}
 
 	subs, err := selectSubscriptions(cfg, subscriptionNames)
@@ -61,7 +61,7 @@ func Run(ctx context.Context, deps Deps, subscriptionNames []string) error {
 	}
 
 	for _, sub := range subs {
-		if err := applySubscription(ctx, deps, cfg.Frameworks, basePath, sub); err != nil {
+		if err := applySubscription(ctx, deps, cfg.Agents, basePath, sub); err != nil {
 			deps.Logger.Warning("skipping subscription %q: %s", sub.Name, err)
 		}
 	}
@@ -96,7 +96,7 @@ func selectSubscriptions(cfg config.Config, names []string) ([]config.Subscripti
 	return result, nil
 }
 
-// subscriptionContext bundles the per-subscription workspace context passed into applyFramework.
+// subscriptionContext bundles the per-subscription workspace context passed into applyAgent.
 type subscriptionContext struct {
 	mf           *manifest.RootManifest
 	blocks       map[string][]block.Block
@@ -110,7 +110,7 @@ type subscriptionContext struct {
 func applySubscription(
 	ctx context.Context,
 	deps Deps,
-	frameworks []string,
+	agents []string,
 	basePath string,
 	sub config.Subscription,
 ) error {
@@ -158,26 +158,26 @@ func applySubscription(
 		blocks:       blocks,
 	}
 
-	for _, framework := range frameworks {
-		if err := applyFramework(ctx, deps, sc, framework); err != nil {
-			deps.Logger.Warning("skipping framework %q for subscription %q: %s", framework, sub.Name, err)
+	for _, agent := range agents {
+		if err := applyAgent(ctx, deps, sc, agent); err != nil {
+			deps.Logger.Warning("skipping agent %q for subscription %q: %s", agent, sub.Name, err)
 		}
 	}
 
 	return nil
 }
 
-// applyFramework handles a single subscription+framework combination.
-func applyFramework(ctx context.Context, deps Deps, sc subscriptionContext, framework string) error {
-	resolved := buildResolvedBlocks(deps.FileSystem, sc.covenRoot, sc.worktreePath, sc.blocks, framework)
+// applyAgent handles a single subscription+agent combination.
+func applyAgent(ctx context.Context, deps Deps, sc subscriptionContext, agent string) error {
+	resolved := buildResolvedBlocks(deps.FileSystem, sc.covenRoot, sc.worktreePath, sc.blocks, agent)
 
 	if len(resolved) == 0 {
 		return nil
 	}
 
-	req := &adapter.ApplyRequest{
+	req := &exporter.ApplyRequest{
 		Blocks: resolved,
-		Manifest: adapter.RequestManifest{
+		Manifest: exporter.RequestManifest{
 			Org:   sc.mf.Org,
 			Coven: sc.mf.Covens[0],
 		},
@@ -186,12 +186,12 @@ func applyFramework(ctx context.Context, deps Deps, sc subscriptionContext, fram
 		Workspace:    sc.worktreePath,
 	}
 
-	resp, err := deps.Dispatcher.Apply(ctx, framework, req)
+	resp, err := deps.Dispatcher.Apply(ctx, agent, req)
 	if err != nil {
-		return fmt.Errorf("adapter failed: %w", err)
+		return fmt.Errorf("exporter failed: %w", err)
 	}
 
-	prevRecords, err := deps.BlockStore.QueryBySubscriptionFramework(ctx, sc.sub.Name, framework)
+	prevRecords, err := deps.BlockStore.QueryBySubscriptionAgent(ctx, sc.sub.Name, agent)
 	if err != nil {
 		return fmt.Errorf("querying existing state: %w", err)
 	}
@@ -207,19 +207,19 @@ func applyFramework(ctx context.Context, deps Deps, sc subscriptionContext, fram
 	for _, result := range resp.Results {
 		if result.Error != nil {
 			deps.Logger.Warning(
-				"block %q skipped by adapter (subscription %q, framework %q): %s",
-				result.Name, sc.sub.Name, framework, *result.Error,
+				"block %q skipped by exporter (subscription %q, agent %q): %s",
+				result.Name, sc.sub.Name, agent, *result.Error,
 			)
 
 			continue
 		}
 
 		for _, placement := range result.Placements {
-			kind, err := checkConflict(ctx, deps.FileSystem, deps.BlockStore, placement.Path, sc.sub.Name, framework)
+			kind, err := checkConflict(ctx, deps.FileSystem, deps.BlockStore, placement.Path, sc.sub.Name, agent)
 			if err != nil {
 				deps.Logger.Warning(
-					"conflict check failed for %q (subscription %q, framework %q): %s",
-					placement.Path, sc.sub.Name, framework, err,
+					"conflict check failed for %q (subscription %q, agent %q): %s",
+					placement.Path, sc.sub.Name, agent, err,
 				)
 
 				continue
@@ -228,15 +228,15 @@ func applyFramework(ctx context.Context, deps Deps, sc subscriptionContext, fram
 			switch kind {
 			case conflictKindUserFile:
 				deps.Logger.Warning(
-					"conflict: %q already exists and is not managed by cova — skipping (subscription %q, framework %q)",
-					placement.Path, sc.sub.Name, framework,
+					"conflict: %q already exists and is not managed by cova — skipping (subscription %q, agent %q)",
+					placement.Path, sc.sub.Name, agent,
 				)
 
 				continue
 			case conflictKindCrossSubscription:
 				deps.Logger.Warning(
-					"conflict: %q is managed by a different subscription — skipping (subscription %q, framework %q)",
-					placement.Path, sc.sub.Name, framework,
+					"conflict: %q is managed by a different subscription — skipping (subscription %q, agent %q)",
+					placement.Path, sc.sub.Name, agent,
 				)
 
 				continue
@@ -246,8 +246,8 @@ func applyFramework(ctx context.Context, deps Deps, sc subscriptionContext, fram
 
 			if err := deps.FileSystem.CreateDirectory(filepath.Dir(placement.Path)); err != nil {
 				deps.Logger.Warning(
-					"failed to create parent directory for %q (subscription %q, framework %q): %s",
-					placement.Path, sc.sub.Name, framework, err,
+					"failed to create parent directory for %q (subscription %q, agent %q): %s",
+					placement.Path, sc.sub.Name, agent, err,
 				)
 
 				continue
@@ -257,8 +257,8 @@ func applyFramework(ctx context.Context, deps Deps, sc subscriptionContext, fram
 
 			if _, err := deps.FileSystem.CopyFile(srcPath, placement.Path); err != nil {
 				deps.Logger.Warning(
-					"failed to copy %q to %q (subscription %q, framework %q): %s",
-					srcPath, placement.Path, sc.sub.Name, framework, err,
+					"failed to copy %q to %q (subscription %q, agent %q): %s",
+					srcPath, placement.Path, sc.sub.Name, agent, err,
 				)
 
 				continue
@@ -269,7 +269,7 @@ func applyFramework(ctx context.Context, deps Deps, sc subscriptionContext, fram
 				Subscription: sc.sub.Name,
 				Source:       placement.Source,
 				BlockType:    result.Name,
-				Framework:    framework,
+				Agent:        agent,
 				Checksum:     "",
 			})
 
@@ -285,8 +285,8 @@ func applyFramework(ctx context.Context, deps Deps, sc subscriptionContext, fram
 
 	if err := cleanupOrphans(ctx, deps, prevPaths, appliedPaths); err != nil {
 		deps.Logger.Warning(
-			"orphan cleanup failed (subscription %q, framework %q): %s",
-			sc.sub.Name, framework, err,
+			"orphan cleanup failed (subscription %q, agent %q): %s",
+			sc.sub.Name, agent, err,
 		)
 	}
 
@@ -294,20 +294,20 @@ func applyFramework(ctx context.Context, deps Deps, sc subscriptionContext, fram
 }
 
 // buildResolvedBlocks resolves variants for all discovered blocks and returns the
-// adapter request blocks map, keyed by block type.
+// exporter request blocks map, keyed by block type.
 // Sources are relative to the worktree root (not the coven root).
 func buildResolvedBlocks(
 	fs utils.FileSystem,
 	covenRoot string,
 	worktreePath string,
 	blocks map[string][]block.Block,
-	framework string,
-) map[string][]adapter.RequestBlock {
-	result := make(map[string][]adapter.RequestBlock)
+	agent string,
+) map[string][]exporter.RequestBlock {
+	result := make(map[string][]exporter.RequestBlock)
 
 	for blockType, blks := range blocks {
 		for _, b := range blks {
-			resolvedDir, include, err := block.ResolveVariant(fs, covenRoot, b.SourceDir, framework)
+			resolvedDir, include, err := block.ResolveVariant(fs, covenRoot, b.SourceDir, agent)
 			if err != nil || !include {
 				continue
 			}
@@ -323,7 +323,7 @@ func buildResolvedBlocks(
 				worktreeRelSource = rel
 			}
 
-			result[blockType] = append(result[blockType], adapter.RequestBlock{
+			result[blockType] = append(result[blockType], exporter.RequestBlock{
 				Name:   b.Name,
 				Source: worktreeRelSource,
 			})

@@ -10,7 +10,7 @@
 - Root command: `cova/cmd/root.go` (package-level var `rootCmd`, no DI)
 - Mockery config: `cova/.mockery.yml` (matryer template, MoqPrefix, recursive, explicit package entries)
 - Specs: `docs/spec.md` (repo spec), `docs/client-spec.md` (client spec)
-- CLI docs: `docs/cova/` (consuming.md, configuration.md, workspaces.md, index.md, adapters.md, state.md, contributing.md)
+- CLI docs: `docs/cova/` (consuming.md, configuration.md, workspaces.md, index.md, exporters.md, state.md, contributing.md)
 
 ### Architecture Patterns
 - Interfaces in `utils/` package, `Default*` concrete types, `NewDefault*(logger)` constructors
@@ -33,7 +33,7 @@
 
 ### Spec Key Points
 - Subscription fields: name (req), repo (req), path (opt), ref (opt)
-- Config: `$XDG_CONFIG_HOME/cova/config.yaml`, has subscriptions + frameworks sections
+- Config: `$XDG_CONFIG_HOME/cova/config.yaml`, has subscriptions + agents sections
 - Workspace: `$XDG_CACHE_HOME/cova/repos/`, keyed by repo URL
 - Manifest: `manifest.yaml` at repo root, `org` + `covens` (string or list)
 - Naming segments: lowercase alphanumeric + hyphens, no leading/trailing/consecutive hyphens

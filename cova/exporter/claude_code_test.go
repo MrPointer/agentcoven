@@ -1,4 +1,4 @@
-package adapter
+package exporter
 
 import (
 	"os"
@@ -10,7 +10,7 @@ import (
 	"github.com/MrPointer/agentcoven/cova/utils"
 )
 
-func TestClaudeCodeAdapter_ApplyingSkilleBlockShouldProducePlacements(t *testing.T) {
+func TestClaudeCodeExporter_ApplyingSkilleBlockShouldProducePlacements(t *testing.T) {
 	homeDir := "/home/testuser"
 	workspace := "/workspace"
 
@@ -23,7 +23,7 @@ func TestClaudeCodeAdapter_ApplyingSkilleBlockShouldProducePlacements(t *testing
 		},
 	}
 
-	a := newClaudeCodeAdapter(mockFS, homeDir)
+	a := newClaudeCodeExporter(mockFS, homeDir)
 	req := &ApplyRequest{
 		Workspace: workspace,
 		Blocks: map[string][]RequestBlock{
@@ -50,7 +50,7 @@ func TestClaudeCodeAdapter_ApplyingSkilleBlockShouldProducePlacements(t *testing
 	require.Equal(t, "skills/acme-platform-code-review/SKILL.md", result.Placements[0].Source)
 }
 
-func TestClaudeCodeAdapter_ApplyingAgentsBlockShouldProducePlacements(t *testing.T) {
+func TestClaudeCodeExporter_ApplyingAgentsBlockShouldProducePlacements(t *testing.T) {
 	homeDir := "/home/testuser"
 	workspace := "/workspace"
 
@@ -62,7 +62,7 @@ func TestClaudeCodeAdapter_ApplyingAgentsBlockShouldProducePlacements(t *testing
 		},
 	}
 
-	a := newClaudeCodeAdapter(mockFS, homeDir)
+	a := newClaudeCodeExporter(mockFS, homeDir)
 	req := &ApplyRequest{
 		Workspace: workspace,
 		Blocks: map[string][]RequestBlock{
@@ -88,7 +88,7 @@ func TestClaudeCodeAdapter_ApplyingAgentsBlockShouldProducePlacements(t *testing
 	)
 }
 
-func TestClaudeCodeAdapter_ApplyingUnsupportedBlockTypeShouldReturnPerBlockError(t *testing.T) {
+func TestClaudeCodeExporter_ApplyingUnsupportedBlockTypeShouldReturnPerBlockError(t *testing.T) {
 	homeDir := "/home/testuser"
 	workspace := "/workspace"
 
@@ -98,7 +98,7 @@ func TestClaudeCodeAdapter_ApplyingUnsupportedBlockTypeShouldReturnPerBlockError
 		},
 	}
 
-	a := newClaudeCodeAdapter(mockFS, homeDir)
+	a := newClaudeCodeExporter(mockFS, homeDir)
 	req := &ApplyRequest{
 		Workspace: workspace,
 		Blocks: map[string][]RequestBlock{
@@ -121,7 +121,7 @@ func TestClaudeCodeAdapter_ApplyingUnsupportedBlockTypeShouldReturnPerBlockError
 	require.Nil(t, result.Placements)
 }
 
-func TestClaudeCodeAdapter_ApplyingMixedBlockTypesShouldHandleEachIndependently(t *testing.T) {
+func TestClaudeCodeExporter_ApplyingMixedBlockTypesShouldHandleEachIndependently(t *testing.T) {
 	homeDir := "/home/testuser"
 	workspace := "/workspace"
 
@@ -133,7 +133,7 @@ func TestClaudeCodeAdapter_ApplyingMixedBlockTypesShouldHandleEachIndependently(
 		},
 	}
 
-	a := newClaudeCodeAdapter(mockFS, homeDir)
+	a := newClaudeCodeExporter(mockFS, homeDir)
 	req := &ApplyRequest{
 		Workspace: workspace,
 		Blocks: map[string][]RequestBlock{
@@ -173,14 +173,14 @@ func TestClaudeCodeAdapter_ApplyingMixedBlockTypesShouldHandleEachIndependently(
 	require.Nil(t, ruleResult.Placements)
 }
 
-func TestClaudeCodeAdapter_ApplyingBlockWithNoFilesShouldReturnEmptyPlacements(t *testing.T) {
+func TestClaudeCodeExporter_ApplyingBlockWithNoFilesShouldReturnEmptyPlacements(t *testing.T) {
 	mockFS := &utils.MoqFileSystem{
 		ReadDirectoryFunc: func(path string) ([]os.DirEntry, error) {
 			return []os.DirEntry{}, nil
 		},
 	}
 
-	a := newClaudeCodeAdapter(mockFS, "/home/user")
+	a := newClaudeCodeExporter(mockFS, "/home/user")
 	req := &ApplyRequest{
 		Workspace: "/ws",
 		Blocks: map[string][]RequestBlock{

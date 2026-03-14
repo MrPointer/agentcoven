@@ -18,15 +18,15 @@ type rawVariants struct {
 	Variants []string `yaml:"variants"`
 }
 
-// ResolveVariant resolves the effective source directory for a block given an adapter name.
+// ResolveVariant resolves the effective source directory for a block given an exporter name.
 //
 // If the block has no variants.yaml, the original sourceDir is returned as-is with include=true.
-// If variants.yaml exists and adapterName is listed, the variant subdirectory is returned with include=true.
-// If variants.yaml exists but adapterName is not listed, empty string is returned with include=false.
+// If variants.yaml exists and exporterName is listed, the variant subdirectory is returned with include=true.
+// If variants.yaml exists but exporterName is not listed, empty string is returned with include=false.
 //
 // sourceDir must be relative to covenRoot (e.g., "skills/acme-platform-deploy-pipeline").
 // The resolved path is also relative to covenRoot (e.g., "skills/acme-platform-deploy-pipeline/claude-code").
-func ResolveVariant(fs utils.FileSystem, covenRoot, sourceDir, adapterName string) (string, bool, error) {
+func ResolveVariant(fs utils.FileSystem, covenRoot, sourceDir, exporterName string) (string, bool, error) {
 	variantsPath := filepath.Join(covenRoot, sourceDir, variantsFilename)
 
 	exists, err := fs.PathExists(variantsPath)
@@ -48,8 +48,8 @@ func ResolveVariant(fs utils.FileSystem, covenRoot, sourceDir, adapterName strin
 		return "", false, fmt.Errorf("parsing variants file at %q: %w", variantsPath, err)
 	}
 
-	if slices.Contains(raw.Variants, adapterName) {
-		return filepath.Join(sourceDir, adapterName), true, nil
+	if slices.Contains(raw.Variants, exporterName) {
+		return filepath.Join(sourceDir, exporterName), true, nil
 	}
 
 	return "", false, nil

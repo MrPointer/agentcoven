@@ -30,7 +30,7 @@ func sampleRecord(path string) Record {
 		Subscription: "acme-platform",
 		Source:       "skills/go-coding/system-prompt.md",
 		BlockType:    "skills",
-		Framework:    "claude-code",
+		Agent:        "claude-code",
 		Checksum:     "abc123",
 	}
 }
@@ -82,7 +82,7 @@ func TestRecordBatch_RecordingBatchShouldPersistAllRecords(t *testing.T) {
 
 	require.NoError(t, err)
 
-	got, err := store.QueryBySubscriptionFramework(ctx, "acme-platform", "claude-code")
+	got, err := store.QueryBySubscriptionAgent(ctx, "acme-platform", "claude-code")
 	require.NoError(t, err)
 	require.Len(t, got, 2)
 }
@@ -144,9 +144,9 @@ func TestQueryByPath_QueryingMissingPathShouldReturnErrNotFound(t *testing.T) {
 	require.Nil(t, got)
 }
 
-// --- QueryBySubscriptionFramework tests ---
+// --- QueryBySubscriptionAgent tests ---
 
-func TestQueryBySubscriptionFramework_QueryingShouldReturnMatchingRecords(t *testing.T) {
+func TestQueryBySubscriptionAgent_QueryingShouldReturnMatchingRecords(t *testing.T) {
 	store := newMemoryStore(t)
 	ctx := t.Context()
 
@@ -160,23 +160,23 @@ func TestQueryBySubscriptionFramework_QueryingShouldReturnMatchingRecords(t *tes
 		Subscription: "other-sub",
 		Source:       "skills/other/prompt.md",
 		BlockType:    "skills",
-		Framework:    "openai",
+		Agent:        "openai",
 		Checksum:     "",
 	}
 
 	require.NoError(t, store.RecordBatch(ctx, append(matching, other)))
 
-	got, err := store.QueryBySubscriptionFramework(ctx, "acme-platform", "claude-code")
+	got, err := store.QueryBySubscriptionAgent(ctx, "acme-platform", "claude-code")
 
 	require.NoError(t, err)
 	require.Len(t, got, 2)
 }
 
-func TestQueryBySubscriptionFramework_QueryingShouldReturnEmptySliceWhenNoneMatch(t *testing.T) {
+func TestQueryBySubscriptionAgent_QueryingShouldReturnEmptySliceWhenNoneMatch(t *testing.T) {
 	store := newMemoryStore(t)
 	ctx := t.Context()
 
-	got, err := store.QueryBySubscriptionFramework(ctx, "no-such-sub", "no-such-framework")
+	got, err := store.QueryBySubscriptionAgent(ctx, "no-such-sub", "no-such-framework")
 
 	require.NoError(t, err)
 	require.Empty(t, got)
@@ -197,7 +197,7 @@ func TestDeleteByPaths_DeletingShouldRemoveSpecifiedRecords(t *testing.T) {
 	require.NoError(t, store.RecordBatch(ctx, records))
 	require.NoError(t, store.DeleteByPaths(ctx, []string{paths[0]}))
 
-	got, err := store.QueryBySubscriptionFramework(ctx, "acme-platform", "claude-code")
+	got, err := store.QueryBySubscriptionAgent(ctx, "acme-platform", "claude-code")
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 	require.Equal(t, paths[1], got[0].Path)
@@ -214,7 +214,7 @@ func TestDeleteByPaths_DeletingEmptySliceShouldDoNothing(t *testing.T) {
 
 	require.NoError(t, err)
 
-	got, err := store.QueryBySubscriptionFramework(ctx, "acme-platform", "claude-code")
+	got, err := store.QueryBySubscriptionAgent(ctx, "acme-platform", "claude-code")
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 }

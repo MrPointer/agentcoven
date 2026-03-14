@@ -1,4 +1,4 @@
-package adapter
+package exporter
 
 import (
 	"context"
@@ -8,27 +8,27 @@ import (
 	"github.com/MrPointer/agentcoven/cova/utils"
 )
 
-// externalAdapter invokes an external cova-adapter-{name} executable using JSON
+// externalExporter invokes an external cova-exporter-{name} executable using JSON
 // over stdin/stdout.
-type externalAdapter struct {
+type externalExporter struct {
 	commander utils.Commander
 	execPath  string
 }
 
-var _ adapter = (*externalAdapter)(nil)
+var _ exporter = (*externalExporter)(nil)
 
-// newExternalAdapter creates an external adapter that invokes the executable at execPath.
-func newExternalAdapter(execPath string, commander utils.Commander) *externalAdapter {
-	return &externalAdapter{
+// newExternalExporter creates an external exporter that invokes the executable at execPath.
+func newExternalExporter(execPath string, commander utils.Commander) *externalExporter {
+	return &externalExporter{
 		execPath:  execPath,
 		commander: commander,
 	}
 }
 
-// apply marshals req to JSON, pipes it to the adapter executable's stdin, and
+// apply marshals req to JSON, pipes it to the exporter executable's stdin, and
 // unmarshals the response from stdout. If the process exits non-zero, a detailed
 // error including stderr is returned.
-func (a *externalAdapter) apply(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error) {
+func (a *externalExporter) apply(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error) {
 	input, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("marshalling apply request: %w", err)
@@ -47,7 +47,7 @@ func (a *externalAdapter) apply(ctx context.Context, req *ApplyRequest) (*ApplyR
 			stderr = result.StderrString()
 		}
 
-		return nil, fmt.Errorf("external adapter %q failed (exit %d): %w\nstderr: %s",
+		return nil, fmt.Errorf("external exporter %q failed (exit %d): %w\nstderr: %s",
 			a.execPath, result.ExitCode, err, stderr)
 	}
 
