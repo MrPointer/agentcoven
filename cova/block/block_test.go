@@ -247,7 +247,7 @@ func TestResolveVariant_ResolvingShouldReturnOriginalSourceDirWhenNoVariantsFile
 	require.Equal(t, "skills/acme-platform-code-review", resolved)
 }
 
-func TestResolveVariant_ResolvingShouldReturnVariantSubdirWhenAdapterIsListed(t *testing.T) {
+func TestResolveVariant_ResolvingShouldReturnVariantSubdirWhenExporterIsListed(t *testing.T) {
 	mockFS := &utils.MoqFileSystem{
 		PathExistsFunc: func(path string) (bool, error) {
 			return true, nil
@@ -266,7 +266,7 @@ func TestResolveVariant_ResolvingShouldReturnVariantSubdirWhenAdapterIsListed(t 
 	require.Equal(t, "skills/acme-platform-deploy-pipeline/claude-code", resolved)
 }
 
-func TestResolveVariant_ResolvingShouldSignalSkipWhenAdapterIsNotListed(t *testing.T) {
+func TestResolveVariant_ResolvingShouldSignalSkipWhenExporterIsNotListed(t *testing.T) {
 	mockFS := &utils.MoqFileSystem{
 		PathExistsFunc: func(path string) (bool, error) {
 			return true, nil

@@ -1,5 +1,5 @@
-// Package adapter translates cova blocks into framework-specific file placements.
-package adapter
+// Package exporter translates cova blocks into agent-specific file placements.
+package exporter
 
 import "context"
 
@@ -21,7 +21,7 @@ type RequestBlock struct {
 	Source string `json:"source"`
 }
 
-// ApplyRequest is the payload sent to an adapter for an apply operation.
+// ApplyRequest is the payload sent to an exporter for an apply operation.
 type ApplyRequest struct {
 	Blocks       map[string][]RequestBlock `json:"blocks"`
 	Manifest     RequestManifest           `json:"manifest"`
@@ -46,15 +46,15 @@ type BlockResult struct {
 	Placements []Placement `json:"placements"`
 }
 
-// ApplyResponse is the payload returned by an adapter after an apply operation.
+// ApplyResponse is the payload returned by an exporter after an apply operation.
 type ApplyResponse struct {
 	// Results contains one entry per input block.
 	Results []BlockResult `json:"results"`
 }
 
-// adapter is the internal interface implemented by all built-in adapters.
-// It does not carry the framework parameter because the dispatcher already resolved
-// which adapter to call.
-type adapter interface {
+// exporter is the internal interface implemented by all built-in exporters.
+// It does not carry the agent parameter because the dispatcher already resolved
+// which exporter to call.
+type exporter interface {
 	apply(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error)
 }

@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MrPointer/agentcoven/cova/adapter"
 	"github.com/MrPointer/agentcoven/cova/config"
+	"github.com/MrPointer/agentcoven/cova/exporter"
 	"github.com/MrPointer/agentcoven/cova/manifest"
 	"github.com/MrPointer/agentcoven/cova/state"
 	"github.com/MrPointer/agentcoven/cova/utils"
@@ -117,7 +117,7 @@ func makeAddDeps(
 	fs utils.FileSystem,
 	git workspace.Git,
 	store state.BlockStore,
-	dispatcher adapter.Dispatcher,
+	dispatcher exporter.Dispatcher,
 	envMgr osmanager.EnvironmentManager,
 	userMgr osmanager.UserManager,
 ) Deps {
@@ -188,10 +188,10 @@ func TestRun_RunningAddWithApplyFalseShouldNotCallDispatcher(t *testing.T) {
 	m := makeBasicMocks()
 
 	dispatcherCalled := false
-	dispatcher := &adapter.MoqDispatcher{
-		ApplyFunc: func(_ context.Context, _ string, _ *adapter.ApplyRequest) (*adapter.ApplyResponse, error) {
+	dispatcher := &exporter.MoqDispatcher{
+		ApplyFunc: func(_ context.Context, _ string, _ *exporter.ApplyRequest) (*exporter.ApplyResponse, error) {
 			dispatcherCalled = true
-			return &adapter.ApplyResponse{}, nil
+			return &exporter.ApplyResponse{}, nil
 		},
 	}
 
@@ -236,10 +236,10 @@ subscriptions:
 	}
 
 	dispatcherCalled := false
-	dispatcher := &adapter.MoqDispatcher{
-		ApplyFunc: func(_ context.Context, _ string, _ *adapter.ApplyRequest) (*adapter.ApplyResponse, error) {
+	dispatcher := &exporter.MoqDispatcher{
+		ApplyFunc: func(_ context.Context, _ string, _ *exporter.ApplyRequest) (*exporter.ApplyResponse, error) {
 			dispatcherCalled = true
-			return &adapter.ApplyResponse{}, nil
+			return &exporter.ApplyResponse{}, nil
 		},
 	}
 
@@ -255,10 +255,10 @@ func TestRun_RunningAddWithApplyTrueAndNewSubscriptionShouldReturnDistinguishabl
 	ctx := t.Context()
 	m := makeBasicMocks()
 
-	// Config with frameworks so apply can proceed past the frameworks check, but
+	// Config with agents so apply can proceed past the agents check, but
 	// the dispatcher will fail — this exercises the error wrapping path.
-	configWithFrameworks := `
-frameworks:
+	configWithAgents := `
+agents:
   - claude-code
 `
 	fsWithConfig := &utils.MoqFileSystem{
@@ -273,8 +273,8 @@ frameworks:
 
 			if strings.HasSuffix(path, "config.yaml") {
 				// First call (for upsert): empty config so subscription is added.
-				// Second call (for apply): config with frameworks.
-				return []byte(configWithFrameworks), nil
+				// Second call (for apply): config with agents.
+				return []byte(configWithAgents), nil
 			}
 
 			return nil, errors.New("unexpected path: " + path)
@@ -306,12 +306,12 @@ frameworks:
 		}
 
 		// config.yaml reads after the upsert (during apply)
-		return []byte(configWithFrameworks), nil
+		return []byte(configWithAgents), nil
 	}
 
-	applyErr := errors.New("adapter exploded")
-	dispatcher := &adapter.MoqDispatcher{
-		ApplyFunc: func(_ context.Context, _ string, _ *adapter.ApplyRequest) (*adapter.ApplyResponse, error) {
+	applyErr := errors.New("exporter exploded")
+	dispatcher := &exporter.MoqDispatcher{
+		ApplyFunc: func(_ context.Context, _ string, _ *exporter.ApplyRequest) (*exporter.ApplyResponse, error) {
 			return nil, applyErr
 		},
 	}

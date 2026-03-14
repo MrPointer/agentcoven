@@ -1,11 +1,11 @@
 # Specification
 
-This document defines how coven repositories are structured, what goes in a manifest, and how blocks are organized. It is the contract that coven maintainers must follow. For the client-side contract (application, adapters, configuration), see the [client specification][client-spec].
+This document defines how coven repositories are structured, what goes in a manifest, and how blocks are organized. It is the contract that coven maintainers must follow. For the client-side contract (application, exporters, configuration), see the [client specification][client-spec].
 
 ## Design Principles
 
 - **Git is the backbone.** No custom registries, no proprietary storage. The git provider handles RBAC, compliance, and review workflows.
-- **Vendor-agnostic by default.** Blocks are assumed portable across frameworks. When framework-specific content is unavoidable, [variants][framework-variants] allow targeted authoring without affecting other frameworks.
+- **Vendor-agnostic by default.** Blocks are assumed portable across agents. When agent-specific content is unavoidable, [variants][agent-variants] allow targeted authoring without affecting other agents.
 - **User sovereignty.** Implementations must never touch files they don't manage.
 - **Standards-compliant.** Well-known block types follow their respective specifications (e.g., skills follow the [Agent Skills specification][agent-skills-spec]).
 - **Extensible taxonomy.** Well-known block types are first-class, but covens can define their own.
@@ -122,7 +122,7 @@ covens:
 
 ### Custom Types
 
-Any directory at the block-type level that is not a well-known type is treated as a custom block type. Implementations should handle custom types with basic operations (copy) without framework-specific transformation.
+Any directory at the block-type level that is not a well-known type is treated as a custom block type. Implementations should handle custom types with basic operations (copy) without agent-specific transformation.
 
 ### Block Structure
 
@@ -138,26 +138,26 @@ skills/
 
 The `name` field in `SKILL.md` frontmatter must match the directory name.
 
-#### Framework Variants
+#### Agent Variants
 
-By default, blocks are **framework-agnostic** — they are assumed to work with any agent framework. This is the common case and requires no special structure.
+By default, blocks are **agent-agnostic** — they are assumed to work with any agent. This is the common case and requires no special structure.
 
-When a block's content is incompatible across frameworks (e.g., frontmatter fields with conflicting semantics), the block may contain **framework-specific variants**. Variants are declared explicitly via a `variants.yaml` file in the block directory:
+When a block's content is incompatible across agents (e.g., frontmatter fields with conflicting semantics), the block may contain **agent-specific variants**. Variants are declared explicitly via a `variants.yaml` file in the block directory:
 
 ```
 skills/
   acme-platform-code-review/
-    SKILL.md                    # framework-agnostic (no variants.yaml)
+    SKILL.md                    # agent-agnostic (no variants.yaml)
 
   acme-platform-deploy-pipeline/
-    variants.yaml               # declares which adapters have variants
+    variants.yaml               # declares which exporters have variants
     claude-code/
       SKILL.md                  # Claude Code variant
     opencode/
       SKILL.md                  # OpenCode variant
 ```
 
-The `variants.yaml` file lists the adapters that have variants for this block:
+The `variants.yaml` file lists the exporters that have variants for this block:
 
 ```yaml
 variants:
@@ -165,13 +165,13 @@ variants:
   - opencode
 ```
 
-Each entry must correspond to a subdirectory in the block directory, named after the [adapter][adapter-protocol] that will consume it.
+Each entry must correspond to a subdirectory in the block directory, named after the [exporter][exporter-protocol] that will consume it.
 
-A block with `variants.yaml` must not contain a root-level block file (e.g., `SKILL.md` at the block root). The presence of `variants.yaml` signals that the block is variant-only — frameworks not listed are not supported by this block. Files and directories not declared in `variants.yaml` are ignored during application, so block directories may contain auxiliary content alongside variant subdirectories.
+A block with `variants.yaml` must not contain a root-level block file (e.g., `SKILL.md` at the block root). The presence of `variants.yaml` signals that the block is variant-only — agents not listed are not supported by this block. Files and directories not declared in `variants.yaml` are ignored during application, so block directories may contain auxiliary content alongside variant subdirectories.
 
-A block without `variants.yaml` is framework-agnostic. Any subdirectories are treated as block content, never as variants — regardless of their names. This eliminates ambiguity: variant intent is always explicit.
+A block without `variants.yaml` is agent-agnostic. Any subdirectories are treated as block content, never as variants — regardless of their names. This eliminates ambiguity: variant intent is always explicit.
 
-Framework-specific variants are **not portable**. A variant authored for one adapter cannot be applied by a different adapter. This is by design — the variant exists precisely because the block's content is not framework-agnostic.
+Agent-specific variants are **not portable**. A variant authored for one exporter cannot be applied by a different exporter. This is by design — the variant exists precisely because the block's content is not agent-agnostic.
 
 ---
 
@@ -205,6 +205,6 @@ A user subscribed to two covens from Acme and one from Contoso sees blocks appli
 [single-coven]: #single-coven-repository
 [local-config]: ./client-spec.md#subscriptions
 [naming]: #naming-convention
-[framework-variants]: #framework-variants
-[adapter-protocol]: ./client-spec.md#adapter-protocol
+[agent-variants]: #agent-variants
+[exporter-protocol]: ./client-spec.md#exporter-protocol
 [agent-skills-spec]: https://agentskills.io/specification

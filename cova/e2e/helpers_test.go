@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MrPointer/agentcoven/cova/adapter"
 	"github.com/MrPointer/agentcoven/cova/apply"
 	"github.com/MrPointer/agentcoven/cova/config"
+	"github.com/MrPointer/agentcoven/cova/exporter"
 	"github.com/MrPointer/agentcoven/cova/state"
 	"github.com/MrPointer/agentcoven/cova/utils"
 	"github.com/MrPointer/agentcoven/cova/utils/logger"
@@ -100,7 +100,7 @@ func gitCmd(t *testing.T, dir string, args ...string) {
 }
 
 // setupApplyEnv extends setupIsolatedEnv with XDG_DATA_HOME and HOME isolation required by apply.
-// It also sets HOME so the Claude Code adapter writes into a temp dir rather than the real home.
+// It also sets HOME so the Claude Code exporter writes into a temp dir rather than the real home.
 // Returns the temp home directory path so callers can verify placed files.
 func setupApplyEnv(t *testing.T) string {
 	t.Helper()
@@ -119,7 +119,7 @@ func setupApplyEnv(t *testing.T) string {
 }
 
 // newApplyDeps builds an apply.Deps with real Default* dependencies.
-// homeDir is passed to the dispatcher so the Claude Code adapter writes to the temp home.
+// homeDir is passed to the dispatcher so the Claude Code exporter writes to the temp home.
 func newApplyDeps(t *testing.T, homeDir string) apply.Deps {
 	t.Helper()
 
@@ -136,7 +136,7 @@ func newApplyDeps(t *testing.T, homeDir string) apply.Deps {
 
 	t.Cleanup(func() { _ = blockStore.Close() })
 
-	dispatcher := adapter.NewDefaultDispatcher(osMgr, cmdr, fs, homeDir)
+	dispatcher := exporter.NewDefaultDispatcher(osMgr, cmdr, fs, homeDir)
 
 	return apply.Deps{
 		Logger:      log,
@@ -203,12 +203,12 @@ func createCovenRepoWithMixedBlocks(t *testing.T, org, coven string) string {
 	})
 }
 
-// claudeCodeSkillPath returns the expected target path for a skill file placed by the Claude Code adapter.
+// claudeCodeSkillPath returns the expected target path for a skill file placed by the Claude Code exporter.
 func claudeCodeSkillPath(homeDir, skillName, fileName string) string {
 	return filepath.Join(homeDir, ".claude", "skills", skillName, fileName)
 }
 
-// claudeCodeAgentPath returns the expected target path for an agent file placed by the Claude Code adapter.
+// claudeCodeAgentPath returns the expected target path for an agent file placed by the Claude Code exporter.
 func claudeCodeAgentPath(homeDir, agentName, fileName string) string {
 	return filepath.Join(homeDir, ".claude", "agents", agentName, fileName)
 }

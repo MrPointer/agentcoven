@@ -2,7 +2,7 @@
 // github.com/vektra/mockery
 // template: matryer
 
-package adapter
+package exporter
 
 import (
 	"context"
@@ -19,7 +19,7 @@ var _ Dispatcher = &MoqDispatcher{}
 //
 //		// make and configure a mocked Dispatcher
 //		mockedDispatcher := &MoqDispatcher{
-//			ApplyFunc: func(ctx context.Context, framework string, req *ApplyRequest) (*ApplyResponse, error) {
+//			ApplyFunc: func(ctx context.Context, agent string, req *ApplyRequest) (*ApplyResponse, error) {
 //				panic("mock out the Apply method")
 //			},
 //		}
@@ -30,7 +30,7 @@ var _ Dispatcher = &MoqDispatcher{}
 //	}
 type MoqDispatcher struct {
 	// ApplyFunc mocks the Apply method.
-	ApplyFunc func(ctx context.Context, framework string, req *ApplyRequest) (*ApplyResponse, error)
+	ApplyFunc func(ctx context.Context, agent string, req *ApplyRequest) (*ApplyResponse, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -38,8 +38,8 @@ type MoqDispatcher struct {
 		Apply []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Framework is the framework argument value.
-			Framework string
+			// Agent is the agent argument value.
+			Agent string
 			// Req is the req argument value.
 			Req *ApplyRequest
 		}
@@ -48,23 +48,23 @@ type MoqDispatcher struct {
 }
 
 // Apply calls ApplyFunc.
-func (mock *MoqDispatcher) Apply(ctx context.Context, framework string, req *ApplyRequest) (*ApplyResponse, error) {
+func (mock *MoqDispatcher) Apply(ctx context.Context, agent string, req *ApplyRequest) (*ApplyResponse, error) {
 	if mock.ApplyFunc == nil {
 		panic("MoqDispatcher.ApplyFunc: method is nil but Dispatcher.Apply was just called")
 	}
 	callInfo := struct {
-		Ctx       context.Context
-		Framework string
-		Req       *ApplyRequest
+		Ctx   context.Context
+		Agent string
+		Req   *ApplyRequest
 	}{
-		Ctx:       ctx,
-		Framework: framework,
-		Req:       req,
+		Ctx:   ctx,
+		Agent: agent,
+		Req:   req,
 	}
 	mock.lockApply.Lock()
 	mock.calls.Apply = append(mock.calls.Apply, callInfo)
 	mock.lockApply.Unlock()
-	return mock.ApplyFunc(ctx, framework, req)
+	return mock.ApplyFunc(ctx, agent, req)
 }
 
 // ApplyCalls gets all the calls that were made to Apply.
@@ -72,14 +72,14 @@ func (mock *MoqDispatcher) Apply(ctx context.Context, framework string, req *App
 //
 //	len(mockedDispatcher.ApplyCalls())
 func (mock *MoqDispatcher) ApplyCalls() []struct {
-	Ctx       context.Context
-	Framework string
-	Req       *ApplyRequest
+	Ctx   context.Context
+	Agent string
+	Req   *ApplyRequest
 } {
 	var calls []struct {
-		Ctx       context.Context
-		Framework string
-		Req       *ApplyRequest
+		Ctx   context.Context
+		Agent string
+		Req   *ApplyRequest
 	}
 	mock.lockApply.RLock()
 	calls = mock.calls.Apply

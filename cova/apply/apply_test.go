@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MrPointer/agentcoven/cova/adapter"
+	"github.com/MrPointer/agentcoven/cova/exporter"
 	"github.com/MrPointer/agentcoven/cova/state"
 	"github.com/MrPointer/agentcoven/cova/utils"
 	"github.com/MrPointer/agentcoven/cova/utils/logger"
@@ -18,7 +18,7 @@ import (
 
 // configYAML is a minimal valid config for use in tests.
 const configYAML = `
-frameworks:
+agents:
   - claude-code
 subscriptions:
   - name: acme-platform
@@ -26,8 +26,8 @@ subscriptions:
     ref: ""
 `
 
-// configNoFrameworksYAML is a config with no frameworks.
-const configNoFrameworksYAML = `
+// configNoAgentsYAML is a config with no agents.
+const configNoAgentsYAML = `
 subscriptions:
   - name: acme-platform
     repo: https://github.com/acme/platform.git
@@ -73,7 +73,7 @@ func makeDeps(
 	fs utils.FileSystem,
 	store state.BlockStore,
 	git workspace.Git,
-	dispatcher adapter.Dispatcher,
+	dispatcher exporter.Dispatcher,
 	envMgr osmanager.EnvironmentManager,
 	userMgr osmanager.UserManager,
 ) Deps {
@@ -89,7 +89,7 @@ func makeDeps(
 	}
 }
 
-func TestRun_RunningApplyShouldReturnErrorWhenConfigHasNoFrameworks(t *testing.T) {
+func TestRun_RunningApplyShouldReturnErrorWhenConfigHasNoAgents(t *testing.T) {
 	ctx := t.Context()
 
 	envMgr := &osmanager.MoqEnvironmentManager{
@@ -101,7 +101,7 @@ func TestRun_RunningApplyShouldReturnErrorWhenConfigHasNoFrameworks(t *testing.T
 	fs := &utils.MoqFileSystem{
 		PathExistsFunc: func(path string) (bool, error) { return true, nil },
 		ReadFileContentsFunc: func(path string) ([]byte, error) {
-			return []byte(configNoFrameworksYAML), nil
+			return []byte(configNoAgentsYAML), nil
 		},
 	}
 	deps := makeDeps(fs, nil, nil, nil, envMgr, userMgr)
@@ -109,7 +109,7 @@ func TestRun_RunningApplyShouldReturnErrorWhenConfigHasNoFrameworks(t *testing.T
 	err := Run(ctx, deps, nil)
 
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "no frameworks configured")
+	require.Contains(t, err.Error(), "no agents configured")
 }
 
 func TestRun_RunningApplyShouldReturnErrorWhenSubscriptionNameNotFound(t *testing.T) {
@@ -229,7 +229,7 @@ func TestRun_RunningApplyShouldApplyBlocksWhenEverythingIsPresent(t *testing.T) 
 		QueryByPathFunc: func(ctx context.Context, path string) (*state.Record, error) {
 			return nil, state.ErrNotFound
 		},
-		QueryBySubscriptionFrameworkFunc: func(ctx context.Context, subscription, framework string) ([]state.Record, error) {
+		QueryBySubscriptionAgentFunc: func(ctx context.Context, subscription, agent string) ([]state.Record, error) {
 			return nil, nil
 		},
 		RecordBatchFunc: func(ctx context.Context, records []state.Record) error {
@@ -237,11 +237,11 @@ func TestRun_RunningApplyShouldApplyBlocksWhenEverythingIsPresent(t *testing.T) 
 		},
 	}
 
-	adapterResp := &adapter.ApplyResponse{
-		Results: []adapter.BlockResult{
+	exporterResp := &exporter.ApplyResponse{
+		Results: []exporter.BlockResult{
 			{
 				Name: "my-skill",
-				Placements: []adapter.Placement{
+				Placements: []exporter.Placement{
 					{
 						Path:   "/output/.claude/skills/my-skill.md",
 						Source: "skills/my-skill/my-skill.md",
@@ -250,9 +250,9 @@ func TestRun_RunningApplyShouldApplyBlocksWhenEverythingIsPresent(t *testing.T) 
 			},
 		},
 	}
-	dispatcher := &adapter.MoqDispatcher{
-		ApplyFunc: func(ctx context.Context, framework string, req *adapter.ApplyRequest) (*adapter.ApplyResponse, error) {
-			return adapterResp, nil
+	dispatcher := &exporter.MoqDispatcher{
+		ApplyFunc: func(ctx context.Context, agent string, req *exporter.ApplyRequest) (*exporter.ApplyResponse, error) {
+			return exporterResp, nil
 		},
 	}
 
@@ -267,11 +267,11 @@ func TestRun_RunningApplyShouldApplyBlocksWhenEverythingIsPresent(t *testing.T) 
 	require.Len(t, store.RecordBatchCalls()[0].Records, 1)
 	require.Equal(t, "/output/.claude/skills/my-skill.md", store.RecordBatchCalls()[0].Records[0].Path)
 	require.Equal(t, "acme-platform", store.RecordBatchCalls()[0].Records[0].Subscription)
-	require.Equal(t, "claude-code", store.RecordBatchCalls()[0].Records[0].Framework)
+	require.Equal(t, "claude-code", store.RecordBatchCalls()[0].Records[0].Agent)
 	require.Empty(t, store.RecordBatchCalls()[0].Records[0].Checksum)
 }
 
-func TestRun_RunningApplyShouldSkipBlockWhenAdapterReportsError(t *testing.T) {
+func TestRun_RunningApplyShouldSkipBlockWhenExporterReportsError(t *testing.T) {
 	ctx := t.Context()
 
 	envMgr := &osmanager.MoqEnvironmentManager{
@@ -303,7 +303,7 @@ func TestRun_RunningApplyShouldSkipBlockWhenAdapterReportsError(t *testing.T) {
 	}
 
 	store := &state.MoqBlockStore{
-		QueryBySubscriptionFrameworkFunc: func(ctx context.Context, subscription, framework string) ([]state.Record, error) {
+		QueryBySubscriptionAgentFunc: func(ctx context.Context, subscription, agent string) ([]state.Record, error) {
 			return nil, nil
 		},
 		RecordBatchFunc: func(ctx context.Context, records []state.Record) error {
@@ -312,17 +312,17 @@ func TestRun_RunningApplyShouldSkipBlockWhenAdapterReportsError(t *testing.T) {
 	}
 
 	blockErr := "unsupported block type"
-	adapterResp := &adapter.ApplyResponse{
-		Results: []adapter.BlockResult{
+	exporterResp := &exporter.ApplyResponse{
+		Results: []exporter.BlockResult{
 			{
 				Name:  "my-skill",
 				Error: &blockErr,
 			},
 		},
 	}
-	dispatcher := &adapter.MoqDispatcher{
-		ApplyFunc: func(ctx context.Context, framework string, req *adapter.ApplyRequest) (*adapter.ApplyResponse, error) {
-			return adapterResp, nil
+	dispatcher := &exporter.MoqDispatcher{
+		ApplyFunc: func(ctx context.Context, agent string, req *exporter.ApplyRequest) (*exporter.ApplyResponse, error) {
+			return exporterResp, nil
 		},
 	}
 
@@ -384,7 +384,7 @@ func TestRun_RunningApplyShouldSkipPlacementOnUserFileConflict(t *testing.T) {
 		QueryByPathFunc: func(ctx context.Context, path string) (*state.Record, error) {
 			return nil, state.ErrNotFound
 		},
-		QueryBySubscriptionFrameworkFunc: func(ctx context.Context, subscription, framework string) ([]state.Record, error) {
+		QueryBySubscriptionAgentFunc: func(ctx context.Context, subscription, agent string) ([]state.Record, error) {
 			return nil, nil
 		},
 		RecordBatchFunc: func(ctx context.Context, records []state.Record) error {
@@ -392,11 +392,11 @@ func TestRun_RunningApplyShouldSkipPlacementOnUserFileConflict(t *testing.T) {
 		},
 	}
 
-	adapterResp := &adapter.ApplyResponse{
-		Results: []adapter.BlockResult{
+	exporterResp := &exporter.ApplyResponse{
+		Results: []exporter.BlockResult{
 			{
 				Name: "my-skill",
-				Placements: []adapter.Placement{
+				Placements: []exporter.Placement{
 					{
 						Path:   "/output/.claude/skills/my-skill.md",
 						Source: "skills/my-skill/my-skill.md",
@@ -405,9 +405,9 @@ func TestRun_RunningApplyShouldSkipPlacementOnUserFileConflict(t *testing.T) {
 			},
 		},
 	}
-	dispatcher := &adapter.MoqDispatcher{
-		ApplyFunc: func(ctx context.Context, framework string, req *adapter.ApplyRequest) (*adapter.ApplyResponse, error) {
-			return adapterResp, nil
+	dispatcher := &exporter.MoqDispatcher{
+		ApplyFunc: func(ctx context.Context, agent string, req *exporter.ApplyRequest) (*exporter.ApplyResponse, error) {
+			return exporterResp, nil
 		},
 	}
 
@@ -463,10 +463,10 @@ func TestRun_RunningApplyShouldSkipPlacementOnCrossSubscriptionConflict(t *testi
 			return &state.Record{
 				Path:         path,
 				Subscription: "other-subscription",
-				Framework:    "claude-code",
+				Agent:        "claude-code",
 			}, nil
 		},
-		QueryBySubscriptionFrameworkFunc: func(ctx context.Context, subscription, framework string) ([]state.Record, error) {
+		QueryBySubscriptionAgentFunc: func(ctx context.Context, subscription, agent string) ([]state.Record, error) {
 			return nil, nil
 		},
 		RecordBatchFunc: func(ctx context.Context, records []state.Record) error {
@@ -474,11 +474,11 @@ func TestRun_RunningApplyShouldSkipPlacementOnCrossSubscriptionConflict(t *testi
 		},
 	}
 
-	adapterResp := &adapter.ApplyResponse{
-		Results: []adapter.BlockResult{
+	exporterResp := &exporter.ApplyResponse{
+		Results: []exporter.BlockResult{
 			{
 				Name: "my-skill",
-				Placements: []adapter.Placement{
+				Placements: []exporter.Placement{
 					{
 						Path:   "/output/.claude/skills/my-skill.md",
 						Source: "skills/my-skill/my-skill.md",
@@ -487,9 +487,9 @@ func TestRun_RunningApplyShouldSkipPlacementOnCrossSubscriptionConflict(t *testi
 			},
 		},
 	}
-	dispatcher := &adapter.MoqDispatcher{
-		ApplyFunc: func(ctx context.Context, framework string, req *adapter.ApplyRequest) (*adapter.ApplyResponse, error) {
-			return adapterResp, nil
+	dispatcher := &exporter.MoqDispatcher{
+		ApplyFunc: func(ctx context.Context, agent string, req *exporter.ApplyRequest) (*exporter.ApplyResponse, error) {
+			return exporterResp, nil
 		},
 	}
 
@@ -541,15 +541,15 @@ func TestRun_RunningApplyShouldOverwriteOwnTrackedFiles(t *testing.T) {
 	}
 
 	store := &state.MoqBlockStore{
-		// Path is tracked by the same subscription and framework — update is safe.
+		// Path is tracked by the same subscription and agent — update is safe.
 		QueryByPathFunc: func(ctx context.Context, path string) (*state.Record, error) {
 			return &state.Record{
 				Path:         path,
 				Subscription: "acme-platform",
-				Framework:    "claude-code",
+				Agent:        "claude-code",
 			}, nil
 		},
-		QueryBySubscriptionFrameworkFunc: func(ctx context.Context, subscription, framework string) ([]state.Record, error) {
+		QueryBySubscriptionAgentFunc: func(ctx context.Context, subscription, agent string) ([]state.Record, error) {
 			return nil, nil
 		},
 		RecordBatchFunc: func(ctx context.Context, records []state.Record) error {
@@ -557,11 +557,11 @@ func TestRun_RunningApplyShouldOverwriteOwnTrackedFiles(t *testing.T) {
 		},
 	}
 
-	adapterResp := &adapter.ApplyResponse{
-		Results: []adapter.BlockResult{
+	exporterResp := &exporter.ApplyResponse{
+		Results: []exporter.BlockResult{
 			{
 				Name: "my-skill",
-				Placements: []adapter.Placement{
+				Placements: []exporter.Placement{
 					{
 						Path:   "/output/.claude/skills/my-skill.md",
 						Source: "skills/my-skill/my-skill.md",
@@ -570,9 +570,9 @@ func TestRun_RunningApplyShouldOverwriteOwnTrackedFiles(t *testing.T) {
 			},
 		},
 	}
-	dispatcher := &adapter.MoqDispatcher{
-		ApplyFunc: func(ctx context.Context, framework string, req *adapter.ApplyRequest) (*adapter.ApplyResponse, error) {
-			return adapterResp, nil
+	dispatcher := &exporter.MoqDispatcher{
+		ApplyFunc: func(ctx context.Context, agent string, req *exporter.ApplyRequest) (*exporter.ApplyResponse, error) {
+			return exporterResp, nil
 		},
 	}
 
@@ -638,12 +638,12 @@ func TestRun_RunningApplyShouldCleanUpOrphanedFiles(t *testing.T) {
 			return nil, state.ErrNotFound
 		},
 		// Previous state includes an old orphaned file.
-		QueryBySubscriptionFrameworkFunc: func(ctx context.Context, subscription, framework string) ([]state.Record, error) {
+		QueryBySubscriptionAgentFunc: func(ctx context.Context, subscription, agent string) ([]state.Record, error) {
 			return []state.Record{
 				{
 					Path:         "/output/.claude/skills/old-skill.md",
 					Subscription: "acme-platform",
-					Framework:    "claude-code",
+					Agent:        "claude-code",
 				},
 			}, nil
 		},
@@ -655,11 +655,11 @@ func TestRun_RunningApplyShouldCleanUpOrphanedFiles(t *testing.T) {
 		},
 	}
 
-	adapterResp := &adapter.ApplyResponse{
-		Results: []adapter.BlockResult{
+	exporterResp := &exporter.ApplyResponse{
+		Results: []exporter.BlockResult{
 			{
 				Name: "new-skill",
-				Placements: []adapter.Placement{
+				Placements: []exporter.Placement{
 					{
 						Path:   "/output/.claude/skills/new-skill.md",
 						Source: "skills/new-skill/new-skill.md",
@@ -668,9 +668,9 @@ func TestRun_RunningApplyShouldCleanUpOrphanedFiles(t *testing.T) {
 			},
 		},
 	}
-	dispatcher := &adapter.MoqDispatcher{
-		ApplyFunc: func(ctx context.Context, framework string, req *adapter.ApplyRequest) (*adapter.ApplyResponse, error) {
-			return adapterResp, nil
+	dispatcher := &exporter.MoqDispatcher{
+		ApplyFunc: func(ctx context.Context, agent string, req *exporter.ApplyRequest) (*exporter.ApplyResponse, error) {
+			return exporterResp, nil
 		},
 	}
 
@@ -688,7 +688,7 @@ func TestRun_RunningApplyShouldApplyOnlyNamedSubscriptions(t *testing.T) {
 	ctx := t.Context()
 
 	const twoSubsConfig = `
-frameworks:
+agents:
   - claude-code
 subscriptions:
   - name: acme-platform
@@ -722,15 +722,15 @@ subscriptions:
 	}
 
 	store := &state.MoqBlockStore{
-		QueryBySubscriptionFrameworkFunc: func(ctx context.Context, subscription, framework string) ([]state.Record, error) {
+		QueryBySubscriptionAgentFunc: func(ctx context.Context, subscription, agent string) ([]state.Record, error) {
 			return nil, nil
 		},
 		RecordBatchFunc: func(ctx context.Context, records []state.Record) error { return nil },
 	}
 
-	dispatcher := &adapter.MoqDispatcher{
-		ApplyFunc: func(ctx context.Context, framework string, req *adapter.ApplyRequest) (*adapter.ApplyResponse, error) {
-			return &adapter.ApplyResponse{}, nil
+	dispatcher := &exporter.MoqDispatcher{
+		ApplyFunc: func(ctx context.Context, agent string, req *exporter.ApplyRequest) (*exporter.ApplyResponse, error) {
+			return &exporter.ApplyResponse{}, nil
 		},
 	}
 

@@ -30,8 +30,8 @@ type Record struct {
 	Source string
 	// BlockType is the block type (e.g., skills, rules, agents).
 	BlockType string
-	// Framework is the target framework the block was applied to.
-	Framework string
+	// Agent is the target agent the block was applied to.
+	Agent string
 	// Checksum is the SHA-256 hash of the applied file contents.
 	Checksum string
 }
@@ -45,8 +45,8 @@ type BlockStore interface {
 	// Returns ErrNotFound if no record exists for the path.
 	QueryByPath(ctx context.Context, path string) (*Record, error)
 
-	// QueryBySubscriptionFramework returns all records for the given subscription and framework.
-	QueryBySubscriptionFramework(ctx context.Context, subscription, framework string) ([]Record, error)
+	// QueryBySubscriptionAgent returns all records for the given subscription and agent.
+	QueryBySubscriptionAgent(ctx context.Context, subscription, agent string) ([]Record, error)
 
 	// DeleteByPaths removes all records with the given absolute paths.
 	DeleteByPaths(ctx context.Context, paths []string) error

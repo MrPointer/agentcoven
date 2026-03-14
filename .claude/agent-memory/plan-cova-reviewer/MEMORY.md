@@ -26,13 +26,13 @@
 ## Packages Created (cova-apply)
 - `cova/state/` — SQLite state tracking (BlockStore interface, SQLiteBlockStore)
 - `cova/block/` — block discovery + variant resolution (Discover, ResolveVariant)
-- `cova/adapter/` — Dispatcher interface, Claude Code built-in, external JSON transport
+- `cova/exporter/` — Dispatcher interface, Claude Code built-in, external JSON transport
 - `cova/apply/` — apply orchestration (Deps + Run pattern, conflict detection, orphan cleanup)
 
 ## Specs
 - Repo spec: `docs/spec.md` — manifest structure, naming convention, block types, variants
-- Client spec: `docs/client-spec.md` — subscriptions, application, adapters, conflict detection
-- Cova docs: `docs/cova/` — index, consuming, contributing, configuration, workspaces, state, adapters
+- Client spec: `docs/client-spec.md` — subscriptions, application, exporters, conflict detection
+- Cova docs: `docs/cova/` — index, consuming, contributing, configuration, workspaces, state, exporters
 
 ## Naming Convention (from spec.md)
 - Pattern: `{org}-{coven}-{block-name}`
@@ -82,9 +82,9 @@
 - `osmanager.ProgramQuery.GetProgramPath(program string) (string, error)` — for finding executables on $PATH
 
 ## Adapter Protocol Schema Details
-- `schemas/adapter/apply-request.schema.json` — manifest has `org` and `coven` (required); `prefix` was removed
+- `schemas/exporter/apply-request.schema.json` — manifest has `org` and `coven` (required); `prefix` was removed
 - `workspace` field schema description: "Absolute path to the workspace root for this subscription's repository" — NOT coven root
-- `client-spec.md` adapter examples do NOT contain `prefix` (already clean); only the JSON schema file has it
+- `client-spec.md` exporter examples do NOT contain `prefix` (already clean); only the JSON schema file has it
 - Block `source` in request: relative to coven root; placement `source` in response: relative to workspace root
 
 ## Review Patterns
@@ -92,7 +92,7 @@
 - Check skill references in sub-plans against actual `.claude/skills/` contents
 - Test conventions: unit tests use `testing.Short()` for opt-out per writing-go-tests skill; build tags are a different pattern
 - CLI now uses `RunE` with `SilenceUsage: true` (skill updated)
-- Master plan (00-master.md for cova-add) explicitly scoped out: apply, adapters, state DB, frameworks, interactive UI
+- Master plan (00-master.md for cova-add) explicitly scoped out: apply, exporters, state DB, agents, interactive UI
 - Multi-coven without args: error (not prompt) is intentional per master plan scope, but contradicts consuming.md
 - Watch for `workspace` field semantics drift — plans may redefine it as coven root vs repo root
 - Watch for callback error handling in command integration — add succeeds but apply fails is a confusing UX scenario

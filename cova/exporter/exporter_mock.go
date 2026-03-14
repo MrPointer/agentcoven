@@ -2,33 +2,33 @@
 // github.com/vektra/mockery
 // template: matryer
 
-package adapter
+package exporter
 
 import (
 	"context"
 	"sync"
 )
 
-// Ensure that Moqadapter does implement adapter.
+// Ensure that Moqexporter does implement exporter.
 // If this is not the case, regenerate this file with mockery.
-var _ adapter = &Moqadapter{}
+var _ exporter = &Moqexporter{}
 
-// Moqadapter is a mock implementation of adapter.
+// Moqexporter is a mock implementation of exporter.
 //
-//	func TestSomethingThatUsesadapter(t *testing.T) {
+//	func TestSomethingThatUsesexporter(t *testing.T) {
 //
-//		// make and configure a mocked adapter
-//		mockedadapter := &Moqadapter{
+//		// make and configure a mocked exporter
+//		mockedexporter := &Moqexporter{
 //			applyFunc: func(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error) {
 //				panic("mock out the apply method")
 //			},
 //		}
 //
-//		// use mockedadapter in code that requires adapter
+//		// use mockedexporter in code that requires exporter
 //		// and then make assertions.
 //
 //	}
-type Moqadapter struct {
+type Moqexporter struct {
 	// applyFunc mocks the apply method.
 	applyFunc func(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error)
 
@@ -46,9 +46,9 @@ type Moqadapter struct {
 }
 
 // apply calls applyFunc.
-func (mock *Moqadapter) apply(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error) {
+func (mock *Moqexporter) apply(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error) {
 	if mock.applyFunc == nil {
-		panic("Moqadapter.applyFunc: method is nil but adapter.apply was just called")
+		panic("Moqexporter.applyFunc: method is nil but exporter.apply was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
@@ -66,8 +66,8 @@ func (mock *Moqadapter) apply(ctx context.Context, req *ApplyRequest) (*ApplyRes
 // applyCalls gets all the calls that were made to apply.
 // Check the length with:
 //
-//	len(mockedadapter.applyCalls())
-func (mock *Moqadapter) applyCalls() []struct {
+//	len(mockedexporter.applyCalls())
+func (mock *Moqexporter) applyCalls() []struct {
 	Ctx context.Context
 	Req *ApplyRequest
 } {

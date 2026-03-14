@@ -1,6 +1,6 @@
 # Consuming
 
-Consuming is how blocks from a coven repository end up in the user's agent frameworks. cova handles subscribing, fetching, placing files where each framework expects them, and cleaning up — the user points at a coven and the blocks are ready to use.
+Consuming is how blocks from a coven repository end up in the user's agents. cova handles subscribing, fetching, placing files where each agent expects them, and cleaning up — the user points at a coven and the blocks are ready to use.
 
 ---
 
@@ -38,11 +38,11 @@ Update always fetches, regardless of ref type. For pinned SHAs the fetch is effe
 
 ## Applying
 
-`cova apply` reconciles the target state (files on disk) with the desired state derived from [subscriptions][subscriptions] and [framework configuration][configuration]. No network operations — it works entirely from what's already cloned locally.
+`cova apply` reconciles the target state (files on disk) with the desired state derived from [subscriptions][subscriptions] and [agent configuration][configuration]. No network operations — it works entirely from what's already cloned locally.
 
-Blocks in a coven repository are already [namespaced][naming] and standards-compliant. Application copies them from the repository to the target locations expected by the user's agent framework(s), using the appropriate [adapter][adapters].
+Blocks in a coven repository are already [namespaced][naming] and standards-compliant. Application copies them from the repository to the target locations expected by the user's agent(s), using the appropriate [exporter][exporters].
 
-For example, a skill at `skills/acme-platform-code-review/SKILL.md` in the coven repository is copied to `~/.agents/skills/acme-platform-code-review/SKILL.md` (or the equivalent path for the target framework).
+For example, a skill at `skills/acme-platform-code-review/SKILL.md` in the coven repository is copied to `~/.agents/skills/acme-platform-code-review/SKILL.md` (or the equivalent path for the target agent).
 
 No renaming or content rewriting occurs during application. The coven repository is the source of truth.
 
@@ -92,7 +92,7 @@ Subscriptions:
   acme-frontend   github.com/acme/coven-blocks  covens/frontend  @ v2.1.0
 
 Applied: 12 blocks (8 skills, 3 rules, 1 agent)
-Frameworks: claude-code, cursor
+Agents: claude-code, cursor
 ```
 
 The default view answers the most common question: what am I subscribed to, and how many blocks do I have?
@@ -128,7 +128,7 @@ acme-frontend (5 blocks):
   agents:
     acme-frontend-designer
 
-Frameworks: claude-code, cursor
+Agents: claude-code, cursor
 ```
 
 Blocks are listed by name, not by file path. The grouping order — subscription then block type — matches how users think about their covens: "what did I get from the acme-platform coven?"
@@ -139,6 +139,6 @@ Blocks are listed by name, not by file path. The grouping order — subscription
 [manifest]: ../spec.md#root-manifest
 [multi-coven]: ../spec.md#multi-coven-repository
 [configuration]: ./configuration.md
-[adapters]: ./adapters.md
+[exporters]: ./exporters.md
 [workspaces]: ./workspaces.md
 [state-tracking]: ./state.md

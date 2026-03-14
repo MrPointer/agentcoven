@@ -2,7 +2,7 @@
 
 **Where agentic AI foundations gather.**
 
-AgentCoven is an open specification for sharing the building blocks behind AI coding agents — skills, rules, agent definitions, and more — through git. Teams collect their foundations in a coven repository, users subscribe, and a compliant tool places everything where their framework expects it. No registries, no config servers, no vendor lock-in. Just git.
+AgentCoven is an open specification for sharing the building blocks behind AI coding agents — skills, rules, agent definitions, and more — through git. Teams collect their foundations in a coven repository, users subscribe, and a compliant tool places everything where their agent expects it. No registries, no config servers, no vendor lock-in. Just git.
 
 ## Motivation
 
@@ -20,7 +20,7 @@ Git already solves collaboration, access control, code review, and audit trails.
 
 2. Users **subscribe** to teams they care about via local configuration.
 
-3. A compliant tool **applies** blocks to the user's machine, placing them where their agent framework expects them.
+3. A compliant tool **applies** blocks to the user's machine, placing them where their agent expects them.
 
 Blocks are namespaced (`{org}-{team}-{block}`) so they coexist cleanly across teams and organizations. The user's own blocks are never touched.
 
@@ -32,16 +32,16 @@ Blocks are namespaced (`{org}-{team}-{block}`) so they coexist cleanly across te
   contoso-devex-ci-pipeline/    # from a different org entirely
 ```
 
-## Framework-agnostic
+## Agent-agnostic
 
-A skill is a skill, whether you run Claude Code, Codex, Cursor, or something else. AgentCoven stores blocks in a standard format. [Adapters](docs/client-spec.md#adapter-protocol) handle translation to each framework's expectations — built-in for well-known frameworks, pluggable for everything else.
+A skill is a skill, whether you run Claude Code, Codex, Cursor, or something else. AgentCoven stores blocks in a standard format. [Exporters](docs/client-spec.md#exporter-protocol) handle translation to each agent's expectations — built-in for well-known agents, pluggable for everything else.
 
 ## Specifications
 
 AgentCoven is defined by two specifications:
 
 - **[Repository Specification](docs/spec.md)** — How coven repositories are structured: manifests, block types, naming, monorepo layout.
-- **[Client Specification](docs/client-spec.md)** — How tools consume and contribute to covens: application semantics, adapter protocol, local configuration.
+- **[Client Specification](docs/client-spec.md)** — How tools consume and contribute to covens: application semantics, exporter protocol, local configuration.
 
 ## Reference implementation
 
@@ -55,7 +55,7 @@ cova status
 
 ## Current status
 
-AgentCoven is in active development. The specifications are stabilizing and `cova` is being built as the reference implementation. Contributions, feedback, and adapter implementations are welcome.
+AgentCoven is in active development. The specifications are stabilizing and `cova` is being built as the reference implementation. Contributions, feedback, and exporter implementations are welcome.
 
 ## License
 

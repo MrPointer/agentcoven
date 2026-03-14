@@ -1,4 +1,4 @@
-package adapter
+package exporter
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/MrPointer/agentcoven/cova/utils/osmanager"
 )
 
-func TestDefaultDispatcher_ApplyingBuiltinFrameworkShouldDelegateToBuiltinAdapter(t *testing.T) {
+func TestDefaultDispatcher_ApplyingBuiltinAgentShouldDelegateToBuiltinExporter(t *testing.T) {
 	mockPQ := &osmanager.MoqProgramQuery{
 		GetProgramPathFunc: func(program string) (string, error) {
 			return "", errors.New("should not be called")
@@ -22,7 +22,7 @@ func TestDefaultDispatcher_ApplyingBuiltinFrameworkShouldDelegateToBuiltinAdapte
 		Results: []BlockResult{{Name: "my-skill"}},
 	}
 
-	mockAdapter := &Moqadapter{
+	mockExporter := &Moqexporter{
 		applyFunc: func(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error) {
 			return expectedResp, nil
 		},
@@ -30,22 +30,22 @@ func TestDefaultDispatcher_ApplyingBuiltinFrameworkShouldDelegateToBuiltinAdapte
 
 	d := &DefaultDispatcher{
 		programQuery: mockPQ,
-		builtins:     map[string]adapter{"test-framework": mockAdapter},
+		builtins:     map[string]exporter{"test-agent": mockExporter},
 	}
 
 	req := &ApplyRequest{Operation: "apply", Blocks: map[string][]RequestBlock{}}
 
-	resp, err := d.Apply(t.Context(), "test-framework", req)
+	resp, err := d.Apply(t.Context(), "test-agent", req)
 
 	require.NoError(t, err)
 	require.Equal(t, expectedResp, resp)
 }
 
-func TestDefaultDispatcher_ApplyingUnknownFrameworkShouldLookUpExternalAdapter(t *testing.T) {
+func TestDefaultDispatcher_ApplyingUnknownAgentShouldLookUpExternalExporter(t *testing.T) {
 	mockPQ := &osmanager.MoqProgramQuery{
 		GetProgramPathFunc: func(program string) (string, error) {
-			if program == "cova-adapter-myfw" {
-				return "/usr/local/bin/cova-adapter-myfw", nil
+			if program == "cova-exporter-myfw" {
+				return "/usr/local/bin/cova-exporter-myfw", nil
 			}
 
 			return "", errors.New("not found")
@@ -63,7 +63,7 @@ func TestDefaultDispatcher_ApplyingUnknownFrameworkShouldLookUpExternalAdapter(t
 	d := &DefaultDispatcher{
 		programQuery: mockPQ,
 		commander:    mockCommander,
-		builtins:     map[string]adapter{},
+		builtins:     map[string]exporter{},
 	}
 
 	req := &ApplyRequest{Operation: "apply", Blocks: map[string][]RequestBlock{}}
@@ -75,7 +75,7 @@ func TestDefaultDispatcher_ApplyingUnknownFrameworkShouldLookUpExternalAdapter(t
 	require.Equal(t, "acme-block", resp.Results[0].Name)
 }
 
-func TestDefaultDispatcher_ApplyingUnknownFrameworkShouldReturnErrorWhenNoAdapterFound(t *testing.T) {
+func TestDefaultDispatcher_ApplyingUnknownAgentShouldReturnErrorWhenNoExporterFound(t *testing.T) {
 	mockPQ := &osmanager.MoqProgramQuery{
 		GetProgramPathFunc: func(program string) (string, error) {
 			return "", errors.New("not found: " + program)
@@ -84,13 +84,13 @@ func TestDefaultDispatcher_ApplyingUnknownFrameworkShouldReturnErrorWhenNoAdapte
 
 	d := &DefaultDispatcher{
 		programQuery: mockPQ,
-		builtins:     map[string]adapter{},
+		builtins:     map[string]exporter{},
 	}
 
 	req := &ApplyRequest{Operation: "apply", Blocks: map[string][]RequestBlock{}}
 
-	_, err := d.Apply(t.Context(), "unknown-framework", req)
+	_, err := d.Apply(t.Context(), "unknown-agent", req)
 
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "unknown-framework")
+	require.Contains(t, err.Error(), "unknown-agent")
 }

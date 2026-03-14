@@ -28,8 +28,8 @@ var _ BlockStore = &MoqBlockStore{}
 //			QueryByPathFunc: func(ctx context.Context, path string) (*Record, error) {
 //				panic("mock out the QueryByPath method")
 //			},
-//			QueryBySubscriptionFrameworkFunc: func(ctx context.Context, subscription string, framework string) ([]Record, error) {
-//				panic("mock out the QueryBySubscriptionFramework method")
+//			QueryBySubscriptionAgentFunc: func(ctx context.Context, subscription string, agent string) ([]Record, error) {
+//				panic("mock out the QueryBySubscriptionAgent method")
 //			},
 //			RecordBatchFunc: func(ctx context.Context, records []Record) error {
 //				panic("mock out the RecordBatch method")
@@ -50,8 +50,8 @@ type MoqBlockStore struct {
 	// QueryByPathFunc mocks the QueryByPath method.
 	QueryByPathFunc func(ctx context.Context, path string) (*Record, error)
 
-	// QueryBySubscriptionFrameworkFunc mocks the QueryBySubscriptionFramework method.
-	QueryBySubscriptionFrameworkFunc func(ctx context.Context, subscription string, framework string) ([]Record, error)
+	// QueryBySubscriptionAgentFunc mocks the QueryBySubscriptionAgent method.
+	QueryBySubscriptionAgentFunc func(ctx context.Context, subscription string, agent string) ([]Record, error)
 
 	// RecordBatchFunc mocks the RecordBatch method.
 	RecordBatchFunc func(ctx context.Context, records []Record) error
@@ -75,14 +75,14 @@ type MoqBlockStore struct {
 			// Path is the path argument value.
 			Path string
 		}
-		// QueryBySubscriptionFramework holds details about calls to the QueryBySubscriptionFramework method.
-		QueryBySubscriptionFramework []struct {
+		// QueryBySubscriptionAgent holds details about calls to the QueryBySubscriptionAgent method.
+		QueryBySubscriptionAgent []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Subscription is the subscription argument value.
 			Subscription string
-			// Framework is the framework argument value.
-			Framework string
+			// Agent is the agent argument value.
+			Agent string
 		}
 		// RecordBatch holds details about calls to the RecordBatch method.
 		RecordBatch []struct {
@@ -92,11 +92,11 @@ type MoqBlockStore struct {
 			Records []Record
 		}
 	}
-	lockClose                        sync.RWMutex
-	lockDeleteByPaths                sync.RWMutex
-	lockQueryByPath                  sync.RWMutex
-	lockQueryBySubscriptionFramework sync.RWMutex
-	lockRecordBatch                  sync.RWMutex
+	lockClose                    sync.RWMutex
+	lockDeleteByPaths            sync.RWMutex
+	lockQueryByPath              sync.RWMutex
+	lockQueryBySubscriptionAgent sync.RWMutex
+	lockRecordBatch              sync.RWMutex
 }
 
 // Close calls CloseFunc.
@@ -198,43 +198,43 @@ func (mock *MoqBlockStore) QueryByPathCalls() []struct {
 	return calls
 }
 
-// QueryBySubscriptionFramework calls QueryBySubscriptionFrameworkFunc.
-func (mock *MoqBlockStore) QueryBySubscriptionFramework(ctx context.Context, subscription string, framework string) ([]Record, error) {
-	if mock.QueryBySubscriptionFrameworkFunc == nil {
-		panic("MoqBlockStore.QueryBySubscriptionFrameworkFunc: method is nil but BlockStore.QueryBySubscriptionFramework was just called")
+// QueryBySubscriptionAgent calls QueryBySubscriptionAgentFunc.
+func (mock *MoqBlockStore) QueryBySubscriptionAgent(ctx context.Context, subscription string, agent string) ([]Record, error) {
+	if mock.QueryBySubscriptionAgentFunc == nil {
+		panic("MoqBlockStore.QueryBySubscriptionAgentFunc: method is nil but BlockStore.QueryBySubscriptionAgent was just called")
 	}
 	callInfo := struct {
 		Ctx          context.Context
 		Subscription string
-		Framework    string
+		Agent        string
 	}{
 		Ctx:          ctx,
 		Subscription: subscription,
-		Framework:    framework,
+		Agent:        agent,
 	}
-	mock.lockQueryBySubscriptionFramework.Lock()
-	mock.calls.QueryBySubscriptionFramework = append(mock.calls.QueryBySubscriptionFramework, callInfo)
-	mock.lockQueryBySubscriptionFramework.Unlock()
-	return mock.QueryBySubscriptionFrameworkFunc(ctx, subscription, framework)
+	mock.lockQueryBySubscriptionAgent.Lock()
+	mock.calls.QueryBySubscriptionAgent = append(mock.calls.QueryBySubscriptionAgent, callInfo)
+	mock.lockQueryBySubscriptionAgent.Unlock()
+	return mock.QueryBySubscriptionAgentFunc(ctx, subscription, agent)
 }
 
-// QueryBySubscriptionFrameworkCalls gets all the calls that were made to QueryBySubscriptionFramework.
+// QueryBySubscriptionAgentCalls gets all the calls that were made to QueryBySubscriptionAgent.
 // Check the length with:
 //
-//	len(mockedBlockStore.QueryBySubscriptionFrameworkCalls())
-func (mock *MoqBlockStore) QueryBySubscriptionFrameworkCalls() []struct {
+//	len(mockedBlockStore.QueryBySubscriptionAgentCalls())
+func (mock *MoqBlockStore) QueryBySubscriptionAgentCalls() []struct {
 	Ctx          context.Context
 	Subscription string
-	Framework    string
+	Agent        string
 } {
 	var calls []struct {
 		Ctx          context.Context
 		Subscription string
-		Framework    string
+		Agent        string
 	}
-	mock.lockQueryBySubscriptionFramework.RLock()
-	calls = mock.calls.QueryBySubscriptionFramework
-	mock.lockQueryBySubscriptionFramework.RUnlock()
+	mock.lockQueryBySubscriptionAgent.RLock()
+	calls = mock.calls.QueryBySubscriptionAgent
+	mock.lockQueryBySubscriptionAgent.RUnlock()
 	return calls
 }
 

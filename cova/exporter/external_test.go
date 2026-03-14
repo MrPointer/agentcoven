@@ -1,4 +1,4 @@
-package adapter
+package exporter
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/MrPointer/agentcoven/cova/utils"
 )
 
-func TestExternalAdapter_ApplyingRequestShouldReturnUnmarshalledResponse(t *testing.T) {
+func TestExternalExporter_ApplyingRequestShouldReturnUnmarshalledResponse(t *testing.T) {
 	expectedResp := &ApplyResponse{
 		Results: []BlockResult{
 			{
@@ -32,7 +32,7 @@ func TestExternalAdapter_ApplyingRequestShouldReturnUnmarshalledResponse(t *test
 		},
 	}
 
-	a := newExternalAdapter("/usr/local/bin/cova-adapter-myfw", mockCommander)
+	a := newExternalExporter("/usr/local/bin/cova-exporter-myfw", mockCommander)
 	req := &ApplyRequest{
 		Operation:    "apply",
 		Subscription: "platform",
@@ -50,17 +50,17 @@ func TestExternalAdapter_ApplyingRequestShouldReturnUnmarshalledResponse(t *test
 	require.Len(t, resp.Results[0].Placements, 1)
 }
 
-func TestExternalAdapter_ApplyingRequestShouldReturnErrorWhenProcessFails(t *testing.T) {
+func TestExternalExporter_ApplyingRequestShouldReturnErrorWhenProcessFails(t *testing.T) {
 	mockCommander := &utils.MoqCommander{
 		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
 			return &utils.Result{
-				Stderr:   []byte("unexpected error in adapter"),
+				Stderr:   []byte("unexpected error in exporter"),
 				ExitCode: 1,
 			}, errors.New("exit status 1")
 		},
 	}
 
-	a := newExternalAdapter("/usr/local/bin/cova-adapter-myfw", mockCommander)
+	a := newExternalExporter("/usr/local/bin/cova-exporter-myfw", mockCommander)
 	req := &ApplyRequest{
 		Operation: "apply",
 		Blocks:    map[string][]RequestBlock{},
@@ -72,14 +72,14 @@ func TestExternalAdapter_ApplyingRequestShouldReturnErrorWhenProcessFails(t *tes
 	require.Contains(t, err.Error(), "failed")
 }
 
-func TestExternalAdapter_ApplyingRequestShouldReturnErrorWhenResponseIsInvalidJSON(t *testing.T) {
+func TestExternalExporter_ApplyingRequestShouldReturnErrorWhenResponseIsInvalidJSON(t *testing.T) {
 	mockCommander := &utils.MoqCommander{
 		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
 			return &utils.Result{Stdout: []byte("not json"), ExitCode: 0}, nil
 		},
 	}
 
-	a := newExternalAdapter("/usr/local/bin/cova-adapter-myfw", mockCommander)
+	a := newExternalExporter("/usr/local/bin/cova-exporter-myfw", mockCommander)
 	req := &ApplyRequest{
 		Operation: "apply",
 		Blocks:    map[string][]RequestBlock{},

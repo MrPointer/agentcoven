@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/MrPointer/agentcoven/cova/adapter"
 	"github.com/MrPointer/agentcoven/cova/add"
+	"github.com/MrPointer/agentcoven/cova/exporter"
 	"github.com/MrPointer/agentcoven/cova/state"
 	"github.com/MrPointer/agentcoven/cova/utils"
 	"github.com/MrPointer/agentcoven/cova/utils/logger"
@@ -51,7 +51,7 @@ For multi-coven repositories, you must specify which covens to subscribe to.`,
 
 		defer blockStore.Close()
 
-		dispatcher := adapter.NewDefaultDispatcher(osManager, commander, fs, homeDir)
+		dispatcher := exporter.NewDefaultDispatcher(osManager, commander, fs, homeDir)
 
 		deps := add.Deps{
 			Logger:      log,

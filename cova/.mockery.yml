@@ -14,7 +14,7 @@ packages:
   github.com/MrPointer/agentcoven/cova:
     config:
       all: true
-  github.com/MrPointer/agentcoven/cova/adapter:
+  github.com/MrPointer/agentcoven/cova/exporter:
     config:
       all: true
   github.com/MrPointer/agentcoven/cova/cli:

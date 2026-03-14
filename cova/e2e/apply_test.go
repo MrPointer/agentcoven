@@ -26,7 +26,7 @@ func TestApply_ApplyingSubscriptionWithSkillsShouldPlaceFilesAtCorrectPaths(t *t
 		Subscriptions: []config.Subscription{
 			{Name: "acme-blocks", Repo: fileURL(repoDir)},
 		},
-		Frameworks: []string{"claude-code"},
+		Agents: []string{"claude-code"},
 	})
 
 	addDeps := newDeps(t)
@@ -56,7 +56,7 @@ func TestApply_ApplyingSubscriptionWithAgentsShouldPlaceFilesAtCorrectPaths(t *t
 		Subscriptions: []config.Subscription{
 			{Name: "acme-blocks", Repo: fileURL(repoDir)},
 		},
-		Frameworks: []string{"claude-code"},
+		Agents: []string{"claude-code"},
 	})
 
 	addDeps := newDeps(t)
@@ -82,7 +82,7 @@ func TestApply_ApplyingMixedBlockTypesShouldPlaceSupportedTypesAndSkipUnsupporte
 		Subscriptions: []config.Subscription{
 			{Name: "acme-blocks", Repo: fileURL(repoDir)},
 		},
-		Frameworks: []string{"claude-code"},
+		Agents: []string{"claude-code"},
 	})
 
 	addDeps := newDeps(t)
@@ -100,7 +100,7 @@ func TestApply_ApplyingMixedBlockTypesShouldPlaceSupportedTypesAndSkipUnsupporte
 	require.NoFileExists(t, rulesPath)
 }
 
-func TestApply_ApplyingWithNoFrameworksConfiguredShouldReturnError(t *testing.T) {
+func TestApply_ApplyingWithNoAgentsConfiguredShouldReturnError(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping E2E tests in short mode")
 	}
@@ -113,7 +113,7 @@ func TestApply_ApplyingWithNoFrameworksConfiguredShouldReturnError(t *testing.T)
 		Subscriptions: []config.Subscription{
 			{Name: "acme-blocks", Repo: fileURL(repoDir)},
 		},
-		Frameworks: nil,
+		Agents: nil,
 	})
 
 	addDeps := newDeps(t)
@@ -122,7 +122,7 @@ func TestApply_ApplyingWithNoFrameworksConfiguredShouldReturnError(t *testing.T)
 	deps := newApplyDeps(t, tempHome)
 	err := apply.Run(t.Context(), deps, nil)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "no frameworks configured")
+	require.Contains(t, err.Error(), "no agents configured")
 }
 
 func TestApply_ApplyingNamedSubscriptionShouldOnlyPlaceThatSubscriptionsBlocks(t *testing.T) {
@@ -140,7 +140,7 @@ func TestApply_ApplyingNamedSubscriptionShouldOnlyPlaceThatSubscriptionsBlocks(t
 			{Name: "acme-alpha", Repo: fileURL(repo1)},
 			{Name: "acme-beta", Repo: fileURL(repo2)},
 		},
-		Frameworks: []string{"claude-code"},
+		Agents: []string{"claude-code"},
 	})
 
 	addDeps := newDeps(t)
@@ -168,7 +168,7 @@ func TestApply_ApplyingUnknownSubscriptionNameShouldReturnError(t *testing.T) {
 		Subscriptions: []config.Subscription{
 			{Name: "acme-blocks", Repo: fileURL(repoDir)},
 		},
-		Frameworks: []string{"claude-code"},
+		Agents: []string{"claude-code"},
 	})
 
 	addDeps := newDeps(t)
@@ -193,7 +193,7 @@ func TestApply_ApplyingShouldRecordStateForPlacedFiles(t *testing.T) {
 		Subscriptions: []config.Subscription{
 			{Name: "acme-blocks", Repo: fileURL(repoDir)},
 		},
-		Frameworks: []string{"claude-code"},
+		Agents: []string{"claude-code"},
 	})
 
 	addDeps := newDeps(t)
@@ -210,7 +210,7 @@ func TestApply_ApplyingShouldRecordStateForPlacedFiles(t *testing.T) {
 	require.Equal(t, targetPath, rec.Path)
 	require.Equal(t, "acme-blocks", rec.Subscription)
 	require.Equal(t, "my-skill", rec.BlockType)
-	require.Equal(t, "claude-code", rec.Framework)
+	require.Equal(t, "claude-code", rec.Agent)
 }
 
 func TestApply_ReApplyingShouldBeIdempotent(t *testing.T) {
@@ -226,7 +226,7 @@ func TestApply_ReApplyingShouldBeIdempotent(t *testing.T) {
 		Subscriptions: []config.Subscription{
 			{Name: "acme-blocks", Repo: fileURL(repoDir)},
 		},
-		Frameworks: []string{"claude-code"},
+		Agents: []string{"claude-code"},
 	})
 
 	addDeps := newDeps(t)
@@ -244,7 +244,7 @@ func TestApply_ReApplyingShouldBeIdempotent(t *testing.T) {
 	require.Equal(t, skillContent, string(content))
 
 	store := openBlockStore(t)
-	records, err := store.QueryBySubscriptionFramework(t.Context(), "acme-blocks", "claude-code")
+	records, err := store.QueryBySubscriptionAgent(t.Context(), "acme-blocks", "claude-code")
 	require.NoError(t, err)
 	require.Len(t, records, 1, "re-apply must not duplicate state records")
 }
@@ -267,7 +267,7 @@ func TestApply_RemovingBlockFromRepoAndReApplyingShouldDeleteOrphanedFile(t *tes
 		Subscriptions: []config.Subscription{
 			{Name: "acme-blocks", Repo: fileURL(repoDir)},
 		},
-		Frameworks: []string{"claude-code"},
+		Agents: []string{"claude-code"},
 	})
 
 	addDeps := newDeps(t)
@@ -320,7 +320,7 @@ func TestApply_UserFileConflictShouldNotOverwriteExistingUnmanagedFile(t *testin
 		Subscriptions: []config.Subscription{
 			{Name: "acme-blocks", Repo: fileURL(repoDir)},
 		},
-		Frameworks: []string{"claude-code"},
+		Agents: []string{"claude-code"},
 	})
 
 	addDeps := newDeps(t)
@@ -349,9 +349,9 @@ func TestAdd_AddingWithApplyBlocksTrueShouldPlaceBlocksImmediately(t *testing.T)
 
 	repoDir, skillContent := createCovenRepoWithSkills(t, "acme", "blocks", "my-skill")
 
-	// Write a config with frameworks already configured so apply can succeed.
+	// Write a config with agents already configured so apply can succeed.
 	writeConfig(t, config.Config{
-		Frameworks: []string{"claude-code"},
+		Agents: []string{"claude-code"},
 	})
 
 	deps := newDeps(t)

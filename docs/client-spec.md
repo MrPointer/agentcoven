@@ -8,7 +8,7 @@ The [repository specification][repo-spec] defines the source format. This docume
 
 ## Local Configuration
 
-The user's local configuration tracks which covens they subscribe to and which frameworks they target. The file format and location are implementation-specific, but the data model is standardized.
+The user's local configuration tracks which covens they subscribe to and which agents they target. The file format and location are implementation-specific, but the data model is standardized.
 
 ### Subscriptions
 
@@ -23,20 +23,20 @@ A subscription binds a local name to a coven within a repository:
 
 A user can hold any number of subscriptions across any number of repositories.
 
-### Frameworks
+### Agents
 
-The configuration lists which agent frameworks to apply blocks to. Each entry must correspond to a known [adapter](#adapter-protocol) — either built-in or external.
+The configuration lists which agents to apply blocks to. Each entry must correspond to a known [exporter](#exporter-protocol) — either built-in or external.
 
 ---
 
 ## Application
 
-Application is the process of copying blocks from a coven repository to the locations expected by the user's agent frameworks.
+Application is the process of copying blocks from a coven repository to the locations expected by the user's agents.
 
 ### Semantics
 
 - **Copy, don't transform.** Blocks are copied as-is from the repository. The coven repository is the source of truth. No renaming or content rewriting occurs during application.
-- **Adapter-driven placement.** The client delegates placement decisions to the [adapter](#adapter-protocol) for each target framework. The adapter determines where each block's files go; the client performs the actual copy and records the result.
+- **Exporter-driven placement.** The client delegates placement decisions to the [exporter](#exporter-protocol) for each target agent. The exporter determines where each block's files go; the client performs the actual copy and records the result.
 
 ### Scoping
 
@@ -72,21 +72,21 @@ If a contribution conflicts with the current state of the default branch, the cl
 
 ---
 
-## Adapter Protocol
+## Exporter Protocol
 
-Adapters are functional — given a set of blocks, an adapter returns where each block should be placed. The client handles the actual file operations (copying, state tracking, conflict detection). The adapter's job is to answer "where".
+Exporters are functional — given a set of blocks, an exporter returns where each block should be placed. The client handles the actual file operations (copying, state tracking, conflict detection). The exporter's job is to answer "where".
 
 ### Wire Format
 
-Adapters communicate over **stdin/stdout using JSON**. The client writes a request to the adapter's stdin and reads the response from stdout. One invocation per subscription per operation.
+Exporters communicate over **stdin/stdout using JSON**. The client writes a request to the exporter's stdin and reads the response from stdout. One invocation per subscription per operation.
 
-### External Adapter Convention
+### External Exporter Convention
 
-External adapters are standalone executables named `cova-adapter-{name}` (or `{tool}-adapter-{name}` for non-cova implementations) discoverable on `$PATH`. The adapter name in configuration maps directly to the executable name, following the git plugin convention.
+External exporters are standalone executables named `cova-exporter-{name}` (or `{tool}-exporter-{name}` for non-cova implementations) discoverable on `$PATH`. The exporter name in configuration maps directly to the executable name, following the git plugin convention.
 
 ### Apply
 
-The client invokes the adapter once per subscription. The adapter receives the subscription's blocks grouped by type, along with the workspace path and manifest metadata. The client resolves [framework variants][framework-variants] before invocation — the `source` field in each block points to the resolved variant directory, not the block root.
+The client invokes the exporter once per subscription. The exporter receives the subscription's blocks grouped by type, along with the workspace path and manifest metadata. The client resolves [agent variants][agent-variants] before invocation — the `source` field in each block points to the resolved variant directory, not the block root.
 
 **Input** (stdin):
 
@@ -158,13 +158,13 @@ The client invokes the adapter once per subscription. The adapter receives the s
 }
 ```
 
-Each result maps to one input block. A block is a directory in the coven repository, and the adapter decides which files within that directory to place and where. A single block may produce multiple placements — one per file the framework needs. The adapter inspects the block's source directory in the workspace to determine this.
+Each result maps to one input block. A block is a directory in the coven repository, and the exporter decides which files within that directory to place and where. A single block may produce multiple placements — one per file the agent needs. The exporter inspects the block's source directory in the workspace to determine this.
 
 For each placement, the client reads the file from the workspace at the resolved source path and copies it to the target path.
 
 ### Remove
 
-The client invokes the adapter once per subscription being removed, so the adapter can clean up any side effects it created during apply (e.g., entries in a framework config file). The client handles deleting the block files — the adapter is only responsible for its own extras.
+The client invokes the exporter once per subscription being removed, so the exporter can clean up any side effects it created during apply (e.g., entries in an agent config file). The client handles deleting the block files — the exporter is only responsible for its own extras.
 
 **Input** (stdin):
 
@@ -210,32 +210,32 @@ A `null` error indicates success. The client proceeds to delete the block files 
 - **No overlapping paths.** Two blocks cannot target the same path. The client must treat this as a conflict.
 - **Source is relative.** The `source` field in placements is relative to the subscription's workspace root. The client resolves the full path by joining `workspace` + `source`.
 
-### Framework Variant Resolution
+### Agent Variant Resolution
 
-Before invoking an adapter, the client resolves each block to the correct [variant][framework-variants] for that adapter:
+Before invoking an exporter, the client resolves each block to the correct [variant][agent-variants] for that exporter:
 
-1. If the block directory contains a `variants.yaml` file, read it. If the adapter name is listed, use the corresponding subdirectory as the variant. If the adapter name is not listed, skip the block for this adapter.
-2. If the block directory does not contain a `variants.yaml` file, use the block's root content (the framework-agnostic version).
+1. If the block directory contains a `variants.yaml` file, read it. If the exporter name is listed, use the corresponding subdirectory as the variant. If the exporter name is not listed, skip the block for this exporter.
+2. If the block directory does not contain a `variants.yaml` file, use the block's root content (the agent-agnostic version).
 
 The presence of `variants.yaml` is the sole signal for variant detection. Subdirectories in blocks without `variants.yaml` are never treated as variants, regardless of their names.
 
-A framework-specific variant must only be applied by the adapter it was authored for. The client must never pass a variant authored for one adapter to a different adapter.
+An agent-specific variant must only be applied by the exporter it was authored for. The client must never pass a variant authored for one exporter to a different exporter.
 
-The `source` field sent to the adapter reflects the resolved variant directory, not the block root.
+The `source` field sent to the exporter reflects the resolved variant directory, not the block root.
 
 ### Trust Model
 
-External adapters run as local executables with the user's permissions. Clients do not sandbox them. The implicit contract:
+External exporters run as local executables with the user's permissions. Clients do not sandbox them. The implicit contract:
 
-- The adapter **should not** write block files — the client handles that based on placements.
-- The adapter **may** perform side effects for its framework (e.g., updating a framework config file).
-- The adapter **should** clean up its own side effects on remove.
+- The exporter **should not** write block files — the client handles that based on placements.
+- The exporter **may** perform side effects for its agent (e.g., updating an agent config file).
+- The exporter **should** clean up its own side effects on remove.
 
-Clients cannot enforce these boundaries. Like any plugin system, trust is placed in the adapter author.
+Clients cannot enforce these boundaries. Like any plugin system, trust is placed in the exporter author.
 
 ### JSON Schemas
 
-The adapter protocol's JSON schemas are available as standalone files under [`schemas/adapter/`][schemas] for use by IDEs, validators, and adapter authors.
+The exporter protocol's JSON schemas are available as standalone files under [`schemas/exporter/`][schemas] for use by IDEs, validators, and exporter authors.
 
 | Schema | File |
 |--------|------|
@@ -249,10 +249,10 @@ The adapter protocol's JSON schemas are available as standalone files under [`sc
 [manifest]: ./spec.md#root-manifest
 [naming]: ./spec.md#naming-convention
 [multi-coven]: ./spec.md#multi-coven-repository
-[framework-variants]: ./spec.md#framework-variants
+[agent-variants]: ./spec.md#agent-variants
 [agent-skills-spec]: https://agentskills.io/specification
-[schemas]: ../schemas/adapter/
-[schema-apply-req]: ../schemas/adapter/apply-request.schema.json
-[schema-apply-resp]: ../schemas/adapter/apply-response.schema.json
-[schema-remove-req]: ../schemas/adapter/remove-request.schema.json
-[schema-remove-resp]: ../schemas/adapter/remove-response.schema.json
+[schemas]: ../schemas/exporter/
+[schema-apply-req]: ../schemas/exporter/apply-request.schema.json
+[schema-apply-resp]: ../schemas/exporter/apply-response.schema.json
+[schema-remove-req]: ../schemas/exporter/remove-request.schema.json
+[schema-remove-resp]: ../schemas/exporter/remove-response.schema.json

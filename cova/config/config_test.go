@@ -133,8 +133,8 @@ func TestLoad_LoadingConfigShouldReturnErrorWhenYAMLIsInvalid(t *testing.T) {
 	require.Contains(t, err.Error(), "parsing config YAML")
 }
 
-func TestLoad_LoadingConfigShouldParseFrameworks(t *testing.T) {
-	yamlData := []byte(`frameworks:
+func TestLoad_LoadingConfigShouldParseAgents(t *testing.T) {
+	yamlData := []byte(`agents:
   - claude-code
   - openai-gpt
 `)
@@ -146,12 +146,12 @@ func TestLoad_LoadingConfigShouldParseFrameworks(t *testing.T) {
 	cfg, err := config.Load(fs, "/some/config.yaml")
 
 	require.NoError(t, err)
-	require.Len(t, cfg.Frameworks, 2)
-	require.Equal(t, "claude-code", cfg.Frameworks[0])
-	require.Equal(t, "openai-gpt", cfg.Frameworks[1])
+	require.Len(t, cfg.Agents, 2)
+	require.Equal(t, "claude-code", cfg.Agents[0])
+	require.Equal(t, "openai-gpt", cfg.Agents[1])
 }
 
-func TestLoad_LoadingConfigShouldReturnEmptyFrameworksWhenOmitted(t *testing.T) {
+func TestLoad_LoadingConfigShouldReturnEmptyAgentsWhenOmitted(t *testing.T) {
 	yamlData := []byte(`subscriptions:
   - name: acme-platform
     repo: github.com/acme/coven-blocks
@@ -164,7 +164,7 @@ func TestLoad_LoadingConfigShouldReturnEmptyFrameworksWhenOmitted(t *testing.T) 
 	cfg, err := config.Load(fs, "/some/config.yaml")
 
 	require.NoError(t, err)
-	require.Empty(t, cfg.Frameworks)
+	require.Empty(t, cfg.Agents)
 }
 
 // --- Save tests ---
@@ -299,7 +299,7 @@ func Test_SavingAndLoadingShouldPreserveSubscriptions(t *testing.T) {
 	require.Equal(t, original, loaded)
 }
 
-func Test_SavingAndLoadingShouldPreserveFrameworks(t *testing.T) {
+func Test_SavingAndLoadingShouldPreserveAgents(t *testing.T) {
 	var stored []byte
 
 	fs := &utils.MoqFileSystem{
@@ -323,7 +323,7 @@ func Test_SavingAndLoadingShouldPreserveFrameworks(t *testing.T) {
 	}
 
 	original := config.Config{
-		Frameworks: []string{"claude-code", "openai-gpt"},
+		Agents: []string{"claude-code", "openai-gpt"},
 	}
 
 	err := config.Save(fs, "/cfg/config.yaml", original)
@@ -335,7 +335,7 @@ func Test_SavingAndLoadingShouldPreserveFrameworks(t *testing.T) {
 	require.Equal(t, original, loaded)
 }
 
-func Test_SavingAndLoadingShouldPreserveSubscriptionsAndFrameworks(t *testing.T) {
+func Test_SavingAndLoadingShouldPreserveSubscriptionsAndAgents(t *testing.T) {
 	var stored []byte
 
 	fs := &utils.MoqFileSystem{
@@ -362,7 +362,7 @@ func Test_SavingAndLoadingShouldPreserveSubscriptionsAndFrameworks(t *testing.T)
 		Subscriptions: []config.Subscription{
 			{Name: "acme-platform", Repo: "github.com/acme/blocks"},
 		},
-		Frameworks: []string{"claude-code"},
+		Agents: []string{"claude-code"},
 	}
 
 	err := config.Save(fs, "/cfg/config.yaml", original)
