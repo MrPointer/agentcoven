@@ -133,6 +133,40 @@ func TestLoad_LoadingConfigShouldReturnErrorWhenYAMLIsInvalid(t *testing.T) {
 	require.Contains(t, err.Error(), "parsing config YAML")
 }
 
+func TestLoad_LoadingConfigShouldParseFrameworks(t *testing.T) {
+	yamlData := []byte(`frameworks:
+  - claude-code
+  - openai-gpt
+`)
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:       func(_ string) (bool, error) { return true, nil },
+		ReadFileContentsFunc: func(_ string) ([]byte, error) { return yamlData, nil },
+	}
+
+	cfg, err := config.Load(fs, "/some/config.yaml")
+
+	require.NoError(t, err)
+	require.Len(t, cfg.Frameworks, 2)
+	require.Equal(t, "claude-code", cfg.Frameworks[0])
+	require.Equal(t, "openai-gpt", cfg.Frameworks[1])
+}
+
+func TestLoad_LoadingConfigShouldReturnEmptyFrameworksWhenOmitted(t *testing.T) {
+	yamlData := []byte(`subscriptions:
+  - name: acme-platform
+    repo: github.com/acme/coven-blocks
+`)
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:       func(_ string) (bool, error) { return true, nil },
+		ReadFileContentsFunc: func(_ string) ([]byte, error) { return yamlData, nil },
+	}
+
+	cfg, err := config.Load(fs, "/some/config.yaml")
+
+	require.NoError(t, err)
+	require.Empty(t, cfg.Frameworks)
+}
+
 // --- Save tests ---
 
 func TestSave_SavingConfigShouldWriteAtomically(t *testing.T) {
@@ -254,6 +288,81 @@ func Test_SavingAndLoadingShouldPreserveSubscriptions(t *testing.T) {
 			{Name: "acme-platform", Repo: "github.com/acme/blocks", Path: "covens/platform", Ref: "v1.0"},
 			{Name: "other-tools", Repo: "github.com/other/tools"},
 		},
+	}
+
+	err := config.Save(fs, "/cfg/config.yaml", original)
+	require.NoError(t, err)
+
+	loaded, err := config.Load(fs, "/cfg/config.yaml")
+
+	require.NoError(t, err)
+	require.Equal(t, original, loaded)
+}
+
+func Test_SavingAndLoadingShouldPreserveFrameworks(t *testing.T) {
+	var stored []byte
+
+	fs := &utils.MoqFileSystem{
+		CreateDirectoryFunc:     func(_ string) error { return nil },
+		CreateTemporaryFileFunc: func(dir, _ string) (string, error) { return dir + "/tmp.yaml", nil },
+		WriteFileFunc: func(_ string, reader io.Reader) (int64, error) {
+			data, err := io.ReadAll(reader)
+			if err != nil {
+				return 0, err
+			}
+
+			stored = data
+
+			return int64(len(data)), nil
+		},
+		RenameFunc:     func(_, _ string) error { return nil },
+		PathExistsFunc: func(_ string) (bool, error) { return true, nil },
+		ReadFileContentsFunc: func(_ string) ([]byte, error) {
+			return stored, nil
+		},
+	}
+
+	original := config.Config{
+		Frameworks: []string{"claude-code", "openai-gpt"},
+	}
+
+	err := config.Save(fs, "/cfg/config.yaml", original)
+	require.NoError(t, err)
+
+	loaded, err := config.Load(fs, "/cfg/config.yaml")
+
+	require.NoError(t, err)
+	require.Equal(t, original, loaded)
+}
+
+func Test_SavingAndLoadingShouldPreserveSubscriptionsAndFrameworks(t *testing.T) {
+	var stored []byte
+
+	fs := &utils.MoqFileSystem{
+		CreateDirectoryFunc:     func(_ string) error { return nil },
+		CreateTemporaryFileFunc: func(dir, _ string) (string, error) { return dir + "/tmp.yaml", nil },
+		WriteFileFunc: func(_ string, reader io.Reader) (int64, error) {
+			data, err := io.ReadAll(reader)
+			if err != nil {
+				return 0, err
+			}
+
+			stored = data
+
+			return int64(len(data)), nil
+		},
+		RenameFunc:     func(_, _ string) error { return nil },
+		PathExistsFunc: func(_ string) (bool, error) { return true, nil },
+		ReadFileContentsFunc: func(_ string) ([]byte, error) {
+			return stored, nil
+		},
+	}
+
+	original := config.Config{
+		Subscriptions: []config.Subscription{
+			{Name: "acme-platform", Repo: "github.com/acme/blocks"},
+		},
+		Frameworks: []string{"claude-code"},
 	}
 
 	err := config.Save(fs, "/cfg/config.yaml", original)

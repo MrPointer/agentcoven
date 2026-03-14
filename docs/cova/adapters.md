@@ -8,12 +8,12 @@ cova uses [adapters][adapter-protocol] to determine where blocks go for each tar
 
 cova ships with built-in adapters for well-known frameworks:
 
-| Framework       | Adapter Name  |
-|-----------------|---------------|
-| **Claude Code** | `claude-code` |
-| **Cursor**      | `cursor`      |
+| Framework       | Adapter Name  | Status    |
+|-----------------|---------------|-----------|
+| **Claude Code** | `claude-code` | Available |
+| **Cursor**      | `cursor`      | Planned   |
 
-Built-in adapters require no registration — they're available as soon as the framework is listed in [config][configuration].
+Built-in adapters require no registration — they're available as soon as the framework is listed in [config][configuration]. Planned adapters are not yet available; using them in config will produce an error until they are implemented.
 
 ---
 

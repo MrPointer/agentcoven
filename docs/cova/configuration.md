@@ -31,13 +31,13 @@ The `subscriptions` section follows the [client specification][subscriptions].
 
 ## Frameworks
 
-> **Not yet implemented:** The `frameworks` field is not yet supported in the config. Currently, the config only contains `subscriptions`. Framework configuration will be added alongside `cova apply`.
-
 | Field        | Required | Description                                                    |
 |--------------|----------|----------------------------------------------------------------|
 | `frameworks` | No       | List of target agent frameworks to apply blocks to. If omitted, cova detects installed frameworks or prompts the user. |
 
 Every entry in `frameworks` must match a known [adapter][adapters]. cova validates this list before applying and rejects unknown identifiers with a clear error — no partial application, no guessing.
+
+> **Manual editing required:** Frameworks are currently managed by editing `config.yaml` directly. A dedicated command (e.g., `cova framework add/remove`) to add and remove framework entries interactively is planned as future work.
 
 <!-- Reference Links -->
 [local-config]: ../client-spec.md#local-configuration

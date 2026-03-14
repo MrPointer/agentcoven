@@ -74,6 +74,12 @@ type FileSystem interface {
 	//
 	// It returns a slice of os.DirEntry, which provides information about the files and directories within the specified directory.
 	ReadDirectory(path string) ([]os.DirEntry, error)
+
+	// CopyFile copies the file at src to dst, creating dst if it does not exist
+	// or truncating it if it does. The parent directory of dst must already exist.
+	//
+	// It returns the number of bytes copied and an error if the operation fails.
+	CopyFile(src, dst string) (int64, error)
 }
 
 // DefaultFileSystem is the default implementation of the FileSystem interface using os package.
@@ -218,4 +224,22 @@ func (fs *DefaultFileSystem) ReadFileContents(path string) ([]byte, error) {
 // ReadDirectory returns the directory entries for the directory at path.
 func (fs *DefaultFileSystem) ReadDirectory(path string) ([]os.DirEntry, error) {
 	return os.ReadDir(path)
+}
+
+// CopyFile opens src for reading, creates or truncates dst, and streams all bytes
+// from src to dst using io.Copy. The parent directory of dst must already exist.
+func (fs *DefaultFileSystem) CopyFile(src, dst string) (int64, error) {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return 0, err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return 0, err
+	}
+	defer dstFile.Close()
+
+	return io.Copy(dstFile, srcFile)
 }

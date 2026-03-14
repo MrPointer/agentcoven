@@ -37,3 +37,11 @@
 - Workspace: `$XDG_CACHE_HOME/cova/repos/`, keyed by repo URL
 - Manifest: `manifest.yaml` at repo root, `org` + `covens` (string or list)
 - Naming segments: lowercase alphanumeric + hyphens, no leading/trailing/consecutive hyphens
+
+### cova-apply Plan Review Notes (2026-03-09)
+- `workspace.Ensure` does clone/fetch + optional checkout; apply uses worktrees instead of checkout
+- `manifest.Parse` at `cova/manifest/manifest.go` - pure function (FileSystem + repoRoot path)
+- `add.Deps` pattern: struct with interface fields, `Run` function takes ctx + deps + args
+- State DB: `$XDG_DATA_HOME/cova/state.db`, `modernc.org/sqlite` (pure Go, no CGo)
+- Block discovery (sub-plan 04): stateless functions, not interfaces -- affects testability of apply orchestration
+- Adapter protocol schema divergence: sub-plan 05 redefines `workspace` field as coven root, not workspace root

@@ -31,6 +31,12 @@ var _ Git = &MoqGit{}
 //			RevParseFunc: func(ctx context.Context, repoDir string, ref string) (string, error) {
 //				panic("mock out the RevParse method")
 //			},
+//			WorktreeAddFunc: func(ctx context.Context, repoDir string, ref string) (string, error) {
+//				panic("mock out the WorktreeAdd method")
+//			},
+//			WorktreeRemoveFunc: func(ctx context.Context, worktreePath string) error {
+//				panic("mock out the WorktreeRemove method")
+//			},
 //		}
 //
 //		// use mockedGit in code that requires Git
@@ -49,6 +55,12 @@ type MoqGit struct {
 
 	// RevParseFunc mocks the RevParse method.
 	RevParseFunc func(ctx context.Context, repoDir string, ref string) (string, error)
+
+	// WorktreeAddFunc mocks the WorktreeAdd method.
+	WorktreeAddFunc func(ctx context.Context, repoDir string, ref string) (string, error)
+
+	// WorktreeRemoveFunc mocks the WorktreeRemove method.
+	WorktreeRemoveFunc func(ctx context.Context, worktreePath string) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -86,11 +98,29 @@ type MoqGit struct {
 			// Ref is the ref argument value.
 			Ref string
 		}
+		// WorktreeAdd holds details about calls to the WorktreeAdd method.
+		WorktreeAdd []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// RepoDir is the repoDir argument value.
+			RepoDir string
+			// Ref is the ref argument value.
+			Ref string
+		}
+		// WorktreeRemove holds details about calls to the WorktreeRemove method.
+		WorktreeRemove []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// WorktreePath is the worktreePath argument value.
+			WorktreePath string
+		}
 	}
-	lockCheckout sync.RWMutex
-	lockClone    sync.RWMutex
-	lockFetch    sync.RWMutex
-	lockRevParse sync.RWMutex
+	lockCheckout       sync.RWMutex
+	lockClone          sync.RWMutex
+	lockFetch          sync.RWMutex
+	lockRevParse       sync.RWMutex
+	lockWorktreeAdd    sync.RWMutex
+	lockWorktreeRemove sync.RWMutex
 }
 
 // Checkout calls CheckoutFunc.
@@ -246,5 +276,81 @@ func (mock *MoqGit) RevParseCalls() []struct {
 	mock.lockRevParse.RLock()
 	calls = mock.calls.RevParse
 	mock.lockRevParse.RUnlock()
+	return calls
+}
+
+// WorktreeAdd calls WorktreeAddFunc.
+func (mock *MoqGit) WorktreeAdd(ctx context.Context, repoDir string, ref string) (string, error) {
+	if mock.WorktreeAddFunc == nil {
+		panic("MoqGit.WorktreeAddFunc: method is nil but Git.WorktreeAdd was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		RepoDir string
+		Ref     string
+	}{
+		Ctx:     ctx,
+		RepoDir: repoDir,
+		Ref:     ref,
+	}
+	mock.lockWorktreeAdd.Lock()
+	mock.calls.WorktreeAdd = append(mock.calls.WorktreeAdd, callInfo)
+	mock.lockWorktreeAdd.Unlock()
+	return mock.WorktreeAddFunc(ctx, repoDir, ref)
+}
+
+// WorktreeAddCalls gets all the calls that were made to WorktreeAdd.
+// Check the length with:
+//
+//	len(mockedGit.WorktreeAddCalls())
+func (mock *MoqGit) WorktreeAddCalls() []struct {
+	Ctx     context.Context
+	RepoDir string
+	Ref     string
+} {
+	var calls []struct {
+		Ctx     context.Context
+		RepoDir string
+		Ref     string
+	}
+	mock.lockWorktreeAdd.RLock()
+	calls = mock.calls.WorktreeAdd
+	mock.lockWorktreeAdd.RUnlock()
+	return calls
+}
+
+// WorktreeRemove calls WorktreeRemoveFunc.
+func (mock *MoqGit) WorktreeRemove(ctx context.Context, worktreePath string) error {
+	if mock.WorktreeRemoveFunc == nil {
+		panic("MoqGit.WorktreeRemoveFunc: method is nil but Git.WorktreeRemove was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		WorktreePath string
+	}{
+		Ctx:          ctx,
+		WorktreePath: worktreePath,
+	}
+	mock.lockWorktreeRemove.Lock()
+	mock.calls.WorktreeRemove = append(mock.calls.WorktreeRemove, callInfo)
+	mock.lockWorktreeRemove.Unlock()
+	return mock.WorktreeRemoveFunc(ctx, worktreePath)
+}
+
+// WorktreeRemoveCalls gets all the calls that were made to WorktreeRemove.
+// Check the length with:
+//
+//	len(mockedGit.WorktreeRemoveCalls())
+func (mock *MoqGit) WorktreeRemoveCalls() []struct {
+	Ctx          context.Context
+	WorktreePath string
+} {
+	var calls []struct {
+		Ctx          context.Context
+		WorktreePath string
+	}
+	mock.lockWorktreeRemove.RLock()
+	calls = mock.calls.WorktreeRemove
+	mock.lockWorktreeRemove.RUnlock()
 	return calls
 }
