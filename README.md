@@ -55,7 +55,7 @@ cova status
 
 ## Current status
 
-AgentCoven is in active development. The specifications are stabilizing and `cova` is being built as the reference implementation. Contributions, feedback, and exporter implementations are welcome.
+AgentCoven is in active development. The specifications are stable and `cova` can subscribe to covens and apply blocks today. See the **[Roadmap](ROADMAP.md)** for what's shipped and what's next. Contributions, feedback, and exporter implementations are welcome.
 
 ## License
 

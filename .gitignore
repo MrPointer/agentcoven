@@ -27,6 +27,7 @@
 !codebook.toml
 !LICENSE
 !README.md
+!ROADMAP.md
 
 # ...even if they are in subdirectories
 !*/
