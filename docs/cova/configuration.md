@@ -1,8 +1,10 @@
 # Configuration
 
-cova extends the [client specification's][local-config] configuration model with implementation-specific fields. The config file lives at `$XDG_CONFIG_HOME/cova/config.yaml` (defaulting to `~/.config/cova/config.yaml`).
+cova extends the [client specification's][local-config] configuration model with implementation-specific fields. The
+config file lives at `$XDG_CONFIG_HOME/cova/config.yaml` (defaulting to `~/.config/cova/config.yaml`).
 
-This file is user-authored — edited directly or managed by commands like [`cova add`][consuming-add] and [`cova remove`][consuming-remove].
+This file is user-authored — edited directly or managed by commands like [`cova add`][consuming-add] and
+[`cova remove`][consuming-remove].
 
 ---
 
@@ -35,9 +37,11 @@ The `subscriptions` section follows the [client specification][subscriptions].
 |----------|----------|----------------------------------------------------------------|
 | `agents` | No       | List of target agents to apply blocks to. If omitted, cova detects installed agents or prompts the user. |
 
-Every entry in `agents` must match a known [exporter][exporters]. cova validates this list before applying and rejects unknown identifiers with a clear error — no partial application, no guessing.
+Every entry in `agents` must match a known [exporter][exporters]. cova validates this list before applying and rejects
+unknown identifiers with a clear error — no partial application, no guessing.
 
-> **Manual editing required:** Agents are currently managed by editing `config.yaml` directly. A dedicated command (e.g., `cova agent add/remove`) to add and remove agent entries interactively is planned as future work.
+> **Manual editing required:** Agents are currently managed by editing `config.yaml` directly. A dedicated command
+(e.g., `cova agent add/remove`) to add and remove agent entries interactively is planned as future work.
 
 <!-- Reference Links -->
 [local-config]: ../client-spec.md#local-configuration

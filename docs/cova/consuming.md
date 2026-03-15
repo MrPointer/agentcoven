@@ -1,18 +1,23 @@
 # Consuming
 
-Consuming is how blocks from a coven repository end up in the user's agents. cova handles subscribing, fetching, placing files where each agent expects them, and cleaning up — the user points at a coven and the blocks are ready to use.
+Consuming is how blocks from a coven repository end up in the user's agents. cova handles subscribing, fetching, placing
+files where each agent expects them, and cleaning up — the user points at a coven and the blocks are ready to use.
 
 ---
 
 ## Adding a Coven
 
-`cova add <repo>` subscribes to a coven. It reads the repository's [manifest][manifest], adds a subscription entry to the [config][configuration], clones the [workspace][workspaces] (or reuses an existing one), and applies the new subscription's blocks to disk automatically.
+`cova add <repo>` subscribes to a coven. It reads the repository's [manifest][manifest], adds a subscription entry to
+the [config][configuration], clones the [workspace][workspaces] (or reuses an existing one), and applies the new
+subscription's blocks to disk automatically.
 
-`--ref` pins a specific version (tag, branch, or commit SHA). Without it, the subscription tracks the repository's default branch.
+`--ref` pins a specific version (tag, branch, or commit SHA). Without it, the subscription tracks the repository's
+default branch.
 
 ### Multi-coven Selection
 
-For [multi-coven][multi-coven] repositories, the user must specify which coven(s) to subscribe to. Coven names can be passed as arguments:
+For [multi-coven][multi-coven] repositories, the user must specify which coven(s) to subscribe to. Coven names can be
+passed as arguments:
 
 ```
 cova add github.com/acme/coven-blocks platform frontend
@@ -20,7 +25,8 @@ cova add github.com/acme/coven-blocks platform frontend
 
 If the repository has multiple covens and no names are given, cova prompts the user to select interactively.
 
-> **Not yet implemented:** Interactive selection is not yet implemented. Currently, if no coven names are provided for a multi-coven repository, `cova add` exits with an error listing the available coven names.
+> **Not yet implemented:** Interactive selection is not yet implemented. Currently, if no coven names are provided for a
+multi-coven repository, `cova add` exits with an error listing the available coven names.
 
 Each selected coven becomes its own subscription entry in the config — they can be updated and removed independently.
 
@@ -30,35 +36,47 @@ Each selected coven becomes its own subscription entry in the config — they ca
 
 > **Not yet implemented:** `cova update` is not yet implemented.
 
-`cova update [name...]` fetches the latest state from the remote and re-applies. Without arguments, all subscriptions are updated. With names, only the specified subscriptions are updated.
+`cova update [name...]` fetches the latest state from the remote and re-applies. Without arguments, all subscriptions
+are updated. With names, only the specified subscriptions are updated.
 
-Update always fetches, regardless of ref type. For pinned SHAs the fetch is effectively a no-op; for branches and tags it pulls the latest changes.
+Update always fetches, regardless of ref type. For pinned SHAs the fetch is effectively a no-op; for branches and tags
+it pulls the latest changes.
 
 ---
 
 ## Applying
 
-`cova apply` reconciles the target state (files on disk) with the desired state derived from [subscriptions][subscriptions] and [agent configuration][configuration]. No network operations — it works entirely from what's already cloned locally.
+`cova apply` reconciles the target state (files on disk) with the desired state derived from
+[subscriptions][subscriptions] and [agent configuration][configuration].
+No network operations — it works entirely from
+what's already cloned locally.
 
-Blocks in a coven repository are already [namespaced][naming] and standards-compliant. Application copies them from the repository to the target locations expected by the user's agent(s), using the appropriate [exporter][exporters].
+Blocks in a coven repository are already [namespaced][naming] and standards-compliant. Application copies them from the
+repository to the target locations expected by the user's agent(s), using the appropriate [exporter][exporters].
 
-For example, a skill at `skills/acme-platform-code-review/SKILL.md` in the coven repository is copied to `~/.agents/skills/acme-platform-code-review/SKILL.md` (or the equivalent path for the target agent).
+For example, a skill at `skills/acme-platform-code-review/SKILL.md` in the coven repository is copied to
+`~/.agents/skills/acme-platform-code-review/SKILL.md` (or the equivalent path for the target agent).
 
 No renaming or content rewriting occurs during application. The coven repository is the source of truth.
 
 ### Scoping
 
-cova tracks which blocks it manages via [state tracking][state-tracking]. It will never create, modify, or delete blocks outside its managed set. The user's own blocks are untouched.
+cova tracks which blocks it manages via [state tracking][state-tracking]. It will never create, modify, or delete blocks
+outside its managed set. The user's own blocks are untouched.
 
 ### Conflict Detection
 
 #### Conflict with User Blocks
 
-During `apply`, if a coven block has the same name as one of the user's existing blocks, cova flags the conflict and requires the user to resolve it before proceeding.
+During `apply`, if a coven block has the same name as one of the user's existing blocks, cova flags the conflict and
+requires the user to resolve it before proceeding.
 
 #### Conflict Between Subscriptions
 
-If two subscriptions contain a block with the same namespaced name, cova flags a conflict and halts application for that block until the user resolves it. In practice, this is rare — it requires two subscriptions to ship an identically named block.
+If two subscriptions contain a block with the same namespaced name, cova flags a conflict and halts application for that
+block until the user resolves it. In practice, this is rare —
+it requires two subscriptions to ship an identically named
+block.
 
 ---
 
@@ -66,7 +84,8 @@ If two subscriptions contain a block with the same namespaced name, cova flags a
 
 > **Not yet implemented:** `cova remove` is not yet implemented.
 
-`cova remove [name...]` unsubscribes from one or more covens. With names, those subscriptions are removed directly. Without arguments, cova prompts the user to select interactively.
+`cova remove [name...]` unsubscribes from one or more covens. With names, those subscriptions are removed directly.
+Without arguments, cova prompts the user to select interactively.
 
 For each removed subscription, cova:
 
@@ -74,7 +93,9 @@ For each removed subscription, cova:
 2. Removes the subscription entry from the [config][configuration].
 3. Updates state.
 
-The [workspace][workspaces] clone is not deleted — it's cache, shared across subscriptions, and harmless to keep. If no subscriptions reference the repository, the workspace persists until the user clears the cache directory.
+The [workspace][workspaces] clone is not deleted —
+it's cache, shared across subscriptions, and harmless to keep. If no
+subscriptions reference the repository, the workspace persists until the user clears the cache directory.
 
 ---
 
@@ -82,7 +103,8 @@ The [workspace][workspaces] clone is not deleted — it's cache, shared across s
 
 > **Not yet implemented:** `cova status` is not yet implemented.
 
-`cova status` shows a snapshot of what's currently subscribed and applied. No network operations — it reads from [config][configuration] and [state][state-tracking] only.
+`cova status` shows a snapshot of what's currently subscribed and applied. No network operations — it reads from
+[config][configuration] and [state][state-tracking] only.
 
 ### Default Output
 
@@ -131,7 +153,9 @@ acme-frontend (5 blocks):
 Agents: claude-code, cursor
 ```
 
-Blocks are listed by name, not by file path. The grouping order — subscription then block type — matches how users think about their covens: "what did I get from the acme-platform coven?"
+Blocks are listed by name, not by file path.
+The grouping order — subscription then block type — matches how users think
+about their covens: "what did I get from the acme-platform coven?"
 
 <!-- Reference Links -->
 [subscriptions]: ../client-spec.md#subscriptions
