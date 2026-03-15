@@ -134,4 +134,16 @@ tasks:
     desc: Uninstall the project from your machine
     cmds:
       - rm -rf $GOBIN/cova
-  
+
+  sandbox:
+    desc: Spawn an isolated Docker shell with cova on PATH (exit to discard)
+    env:
+      GOOS: linux
+    cmds:
+      - goreleaser build --single-target --skip before --snapshot --clean --output ./bin/cova-linux
+      - docker build -t cova-sandbox -f sandbox.dockerfile .
+      - cmd: >-
+          docker run --rm -it
+          -v {{ .TASKFILE_DIR }}/bin/cova-linux:/usr/local/bin/cova:ro
+          cova-sandbox
+        interactive: true

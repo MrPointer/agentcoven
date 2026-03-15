@@ -1,0 +1,4 @@
+org: testorg
+covens:
+  - frontend
+  - platform
