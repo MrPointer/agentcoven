@@ -31,6 +31,10 @@ A user can hold any number of subscriptions across any number of repositories.
 The configuration lists which agents to apply blocks to. Each entry must correspond to a known
 [exporter](#exporter-protocol) — either built-in or external.
 
+When the agent list is empty or absent, the client has no exporters to invoke — application is a no-op. The client must
+warn the user that no agents are configured and skip application without treating it as an error. Subscription mutations
+(add, remove, update) must succeed independently of agent configuration.
+
 ---
 
 ## Application

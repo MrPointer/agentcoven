@@ -100,7 +100,7 @@ func TestApply_ApplyingMixedBlockTypesShouldPlaceSupportedTypesAndSkipUnsupporte
 	require.NoFileExists(t, rulesPath)
 }
 
-func TestApply_ApplyingWithNoAgentsConfiguredShouldReturnError(t *testing.T) {
+func TestApply_ApplyingWithNoAgentsConfiguredShouldSucceedWithNoOp(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping E2E tests in short mode")
 	}
@@ -121,8 +121,7 @@ func TestApply_ApplyingWithNoAgentsConfiguredShouldReturnError(t *testing.T) {
 
 	deps := newApplyDeps(t, tempHome)
 	err := apply.Run(t.Context(), deps, nil)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no agents configured")
+	require.NoError(t, err)
 }
 
 func TestApply_ApplyingNamedSubscriptionShouldOnlyPlaceThatSubscriptionsBlocks(t *testing.T) {
