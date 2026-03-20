@@ -140,6 +140,10 @@ func UpsertSubscription(
 
 	lockPath := path + lockSuffix
 
+	if err := fs.CreateDirectory(filepath.Dir(lockPath)); err != nil {
+		return 0, fmt.Errorf("creating config directory: %w", err)
+	}
+
 	err := locker.WithLock(ctx, lockPath, func() error {
 		cfg, err := Load(fs, path)
 		if err != nil {
