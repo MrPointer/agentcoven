@@ -89,7 +89,7 @@ func makeDeps(
 	}
 }
 
-func TestRun_RunningApplyShouldReturnErrorWhenConfigHasNoAgents(t *testing.T) {
+func TestRun_RunningApplyShouldWarnAndNoOpWhenConfigHasNoAgents(t *testing.T) {
 	ctx := t.Context()
 
 	envMgr := &osmanager.MoqEnvironmentManager{
@@ -104,12 +104,19 @@ func TestRun_RunningApplyShouldReturnErrorWhenConfigHasNoAgents(t *testing.T) {
 			return []byte(configNoAgentsYAML), nil
 		},
 	}
+
+	var warned bool
+
+	log := &logger.MoqLogger{
+		WarningFunc: func(format string, args ...any) { warned = true },
+	}
 	deps := makeDeps(fs, nil, nil, nil, envMgr, userMgr)
+	deps.Logger = log
 
 	err := Run(ctx, deps, nil)
 
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "no agents configured")
+	require.NoError(t, err)
+	require.True(t, warned, "expected a warning about no agents configured")
 }
 
 func TestRun_RunningApplyShouldReturnErrorWhenSubscriptionNameNotFound(t *testing.T) {

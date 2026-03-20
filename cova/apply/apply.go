@@ -2,7 +2,6 @@ package apply
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -47,7 +46,9 @@ func Run(ctx context.Context, deps Deps, subscriptionNames []string) error {
 	}
 
 	if len(cfg.Agents) == 0 {
-		return errors.New("no agents configured; add at least one agent to your config")
+		deps.Logger.Warning("no agents configured — skipping application (add agents to your config)")
+
+		return nil
 	}
 
 	subs, err := selectSubscriptions(cfg, subscriptionNames)

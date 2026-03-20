@@ -34,7 +34,7 @@ The minimum feature set for a usable first release.
 ## Phase 2
 
 - [ ] **Importing** — import blocks from agent-native formats (e.g. Claude Code → coven blocks)
-- [ ] **Interactive menus** — guided multi-coven selection and other interactive flows
+- [ ] **Interactive menus** — guided multi-coven selection, first-run agent picker, and other interactive flows
 
 ## Phase 3
 
