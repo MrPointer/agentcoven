@@ -456,6 +456,7 @@ func TestUpsertSubscription_UpsertingShouldNoOpWhenSubscriptionIsIdentical(t *te
     repo: github.com/acme/blocks
 `)
 	fs := &utils.MoqFileSystem{
+		CreateDirectoryFunc:  func(_ string) error { return nil },
 		PathExistsFunc:       func(_ string) (bool, error) { return true, nil },
 		ReadFileContentsFunc: func(_ string) ([]byte, error) { return existingYAML, nil },
 	}
@@ -495,8 +496,23 @@ func TestUpsertSubscription_UpsertingShouldUseLockFileSuffix(t *testing.T) {
 	require.Equal(t, "/cfg/config.yaml.lock", lockedPath)
 }
 
+func TestUpsertSubscription_UpsertingShouldReturnErrorWhenDirCreationFails(t *testing.T) {
+	fs := &utils.MoqFileSystem{
+		CreateDirectoryFunc: func(_ string) error { return errors.New("permission denied") },
+	}
+	locker := &utils.MoqLocker{}
+
+	sub := config.Subscription{Name: "test", Repo: "github.com/test/repo"}
+	_, err := config.UpsertSubscription(t.Context(), fs, locker, "/cfg/config.yaml", sub)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "creating config directory")
+}
+
 func TestUpsertSubscription_UpsertingShouldReturnErrorWhenLockFails(t *testing.T) {
-	fs := &utils.MoqFileSystem{}
+	fs := &utils.MoqFileSystem{
+		CreateDirectoryFunc: func(_ string) error { return nil },
+	}
 	locker := &utils.MoqLocker{
 		WithLockFunc: func(_ context.Context, _ string, _ func() error) error {
 			return errors.New("lock timeout")
