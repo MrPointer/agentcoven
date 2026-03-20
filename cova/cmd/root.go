@@ -9,7 +9,8 @@ var rootCmd = &cobra.Command{
 	Long: `cova is the reference implementation of the AgentCoven client specification.
 It applies shared AI agent building blocks — skills, rules, agents — from coven
 repositories to your local filesystem, translating them for your agent.`,
-	SilenceUsage: true,
+	SilenceUsage:  true,
+	SilenceErrors: true,
 }
 
 // Execute runs the root command and returns any error.
