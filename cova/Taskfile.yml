@@ -140,6 +140,7 @@ tasks:
     env:
       GOOS: linux
     cmds:
+      - mkdir -p ./bin
       - goreleaser build --single-target --skip before --snapshot --clean --output ./bin/cova-linux
       - docker build -t cova-sandbox -f sandbox.dockerfile .
       - cmd: >-
