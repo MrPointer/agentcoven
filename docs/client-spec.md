@@ -239,6 +239,9 @@ A `null` error indicates success. The client proceeds to delete the block files 
 regardless — the remove
 call is a notification, not a gate.
 
+If the local workspace for the subscription's repository is unavailable (e.g., the cache was manually deleted), the
+client should skip the exporter notification and proceed directly with file and state cleanup.
+
 ### Placement Rules
 
 - **One result per input block.** Every block in the request must have a corresponding result.
