@@ -44,6 +44,13 @@ const (
 	// queryBySubAgentSQL selects all records for a subscription+agent.
 	queryBySubAgentSQL = `SELECT path, subscription, source, block_type, agent, checksum
 		FROM blocks WHERE subscription = ? AND agent = ?`
+
+	// queryBySubSQL selects all records for a subscription.
+	queryBySubSQL = `SELECT path, subscription, source, block_type, agent, checksum
+		FROM blocks WHERE subscription = ?`
+
+	// deleteBySubSQL deletes all records for a subscription.
+	deleteBySubSQL = `DELETE FROM blocks WHERE subscription = ?`
 )
 
 // SQLiteBlockStore is a BlockStore backed by a SQLite database.
@@ -171,6 +178,36 @@ func (s *SQLiteBlockStore) QueryBySubscriptionAgent(
 	return records, nil
 }
 
+// QueryBySubscription returns all records for the given subscription, regardless of agent.
+func (s *SQLiteBlockStore) QueryBySubscription(
+	ctx context.Context,
+	subscription string,
+) ([]Record, error) {
+	rows, err := s.db.QueryContext(ctx, queryBySubSQL, subscription)
+	if err != nil {
+		return nil, fmt.Errorf("querying records for subscription %q: %w", subscription, err)
+	}
+
+	defer rows.Close()
+
+	var records []Record
+
+	for rows.Next() {
+		var r Record
+		if err := rows.Scan(&r.Path, &r.Subscription, &r.Source, &r.BlockType, &r.Agent, &r.Checksum); err != nil {
+			return nil, fmt.Errorf("scanning record: %w", err)
+		}
+
+		records = append(records, r)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating records: %w", err)
+	}
+
+	return records, nil
+}
+
 // DeleteByPaths removes all records with the given absolute paths.
 func (s *SQLiteBlockStore) DeleteByPaths(ctx context.Context, paths []string) error {
 	if len(paths) == 0 {
@@ -192,6 +229,15 @@ func (s *SQLiteBlockStore) DeleteByPaths(ctx context.Context, paths []string) er
 
 	if _, err := s.db.ExecContext(ctx, query, args...); err != nil {
 		return fmt.Errorf("deleting records: %w", err)
+	}
+
+	return nil
+}
+
+// DeleteBySubscription removes all records for the given subscription.
+func (s *SQLiteBlockStore) DeleteBySubscription(ctx context.Context, subscription string) error {
+	if _, err := s.db.ExecContext(ctx, deleteBySubSQL, subscription); err != nil {
+		return fmt.Errorf("deleting records for subscription %q: %w", subscription, err)
 	}
 
 	return nil

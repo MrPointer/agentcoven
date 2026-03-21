@@ -22,6 +22,9 @@ var _ Dispatcher = &MoqDispatcher{}
 //			ApplyFunc: func(ctx context.Context, agent string, req *ApplyRequest) (*ApplyResponse, error) {
 //				panic("mock out the Apply method")
 //			},
+//			RemoveFunc: func(ctx context.Context, agent string, req *RemoveRequest) (*RemoveResponse, error) {
+//				panic("mock out the Remove method")
+//			},
 //		}
 //
 //		// use mockedDispatcher in code that requires Dispatcher
@@ -31,6 +34,9 @@ var _ Dispatcher = &MoqDispatcher{}
 type MoqDispatcher struct {
 	// ApplyFunc mocks the Apply method.
 	ApplyFunc func(ctx context.Context, agent string, req *ApplyRequest) (*ApplyResponse, error)
+
+	// RemoveFunc mocks the Remove method.
+	RemoveFunc func(ctx context.Context, agent string, req *RemoveRequest) (*RemoveResponse, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -43,8 +49,18 @@ type MoqDispatcher struct {
 			// Req is the req argument value.
 			Req *ApplyRequest
 		}
+		// Remove holds details about calls to the Remove method.
+		Remove []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Agent is the agent argument value.
+			Agent string
+			// Req is the req argument value.
+			Req *RemoveRequest
+		}
 	}
-	lockApply sync.RWMutex
+	lockApply  sync.RWMutex
+	lockRemove sync.RWMutex
 }
 
 // Apply calls ApplyFunc.
@@ -84,5 +100,45 @@ func (mock *MoqDispatcher) ApplyCalls() []struct {
 	mock.lockApply.RLock()
 	calls = mock.calls.Apply
 	mock.lockApply.RUnlock()
+	return calls
+}
+
+// Remove calls RemoveFunc.
+func (mock *MoqDispatcher) Remove(ctx context.Context, agent string, req *RemoveRequest) (*RemoveResponse, error) {
+	if mock.RemoveFunc == nil {
+		panic("MoqDispatcher.RemoveFunc: method is nil but Dispatcher.Remove was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Agent string
+		Req   *RemoveRequest
+	}{
+		Ctx:   ctx,
+		Agent: agent,
+		Req:   req,
+	}
+	mock.lockRemove.Lock()
+	mock.calls.Remove = append(mock.calls.Remove, callInfo)
+	mock.lockRemove.Unlock()
+	return mock.RemoveFunc(ctx, agent, req)
+}
+
+// RemoveCalls gets all the calls that were made to Remove.
+// Check the length with:
+//
+//	len(mockedDispatcher.RemoveCalls())
+func (mock *MoqDispatcher) RemoveCalls() []struct {
+	Ctx   context.Context
+	Agent string
+	Req   *RemoveRequest
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Agent string
+		Req   *RemoveRequest
+	}
+	mock.lockRemove.RLock()
+	calls = mock.calls.Remove
+	mock.lockRemove.RUnlock()
 	return calls
 }

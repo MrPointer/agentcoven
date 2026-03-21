@@ -25,8 +25,14 @@ var _ BlockStore = &MoqBlockStore{}
 //			DeleteByPathsFunc: func(ctx context.Context, paths []string) error {
 //				panic("mock out the DeleteByPaths method")
 //			},
+//			DeleteBySubscriptionFunc: func(ctx context.Context, subscription string) error {
+//				panic("mock out the DeleteBySubscription method")
+//			},
 //			QueryByPathFunc: func(ctx context.Context, path string) (*Record, error) {
 //				panic("mock out the QueryByPath method")
+//			},
+//			QueryBySubscriptionFunc: func(ctx context.Context, subscription string) ([]Record, error) {
+//				panic("mock out the QueryBySubscription method")
 //			},
 //			QueryBySubscriptionAgentFunc: func(ctx context.Context, subscription string, agent string) ([]Record, error) {
 //				panic("mock out the QueryBySubscriptionAgent method")
@@ -47,8 +53,14 @@ type MoqBlockStore struct {
 	// DeleteByPathsFunc mocks the DeleteByPaths method.
 	DeleteByPathsFunc func(ctx context.Context, paths []string) error
 
+	// DeleteBySubscriptionFunc mocks the DeleteBySubscription method.
+	DeleteBySubscriptionFunc func(ctx context.Context, subscription string) error
+
 	// QueryByPathFunc mocks the QueryByPath method.
 	QueryByPathFunc func(ctx context.Context, path string) (*Record, error)
+
+	// QueryBySubscriptionFunc mocks the QueryBySubscription method.
+	QueryBySubscriptionFunc func(ctx context.Context, subscription string) ([]Record, error)
 
 	// QueryBySubscriptionAgentFunc mocks the QueryBySubscriptionAgent method.
 	QueryBySubscriptionAgentFunc func(ctx context.Context, subscription string, agent string) ([]Record, error)
@@ -68,12 +80,26 @@ type MoqBlockStore struct {
 			// Paths is the paths argument value.
 			Paths []string
 		}
+		// DeleteBySubscription holds details about calls to the DeleteBySubscription method.
+		DeleteBySubscription []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Subscription is the subscription argument value.
+			Subscription string
+		}
 		// QueryByPath holds details about calls to the QueryByPath method.
 		QueryByPath []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Path is the path argument value.
 			Path string
+		}
+		// QueryBySubscription holds details about calls to the QueryBySubscription method.
+		QueryBySubscription []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Subscription is the subscription argument value.
+			Subscription string
 		}
 		// QueryBySubscriptionAgent holds details about calls to the QueryBySubscriptionAgent method.
 		QueryBySubscriptionAgent []struct {
@@ -94,7 +120,9 @@ type MoqBlockStore struct {
 	}
 	lockClose                    sync.RWMutex
 	lockDeleteByPaths            sync.RWMutex
+	lockDeleteBySubscription     sync.RWMutex
 	lockQueryByPath              sync.RWMutex
+	lockQueryBySubscription      sync.RWMutex
 	lockQueryBySubscriptionAgent sync.RWMutex
 	lockRecordBatch              sync.RWMutex
 }
@@ -162,6 +190,42 @@ func (mock *MoqBlockStore) DeleteByPathsCalls() []struct {
 	return calls
 }
 
+// DeleteBySubscription calls DeleteBySubscriptionFunc.
+func (mock *MoqBlockStore) DeleteBySubscription(ctx context.Context, subscription string) error {
+	if mock.DeleteBySubscriptionFunc == nil {
+		panic("MoqBlockStore.DeleteBySubscriptionFunc: method is nil but BlockStore.DeleteBySubscription was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		Subscription string
+	}{
+		Ctx:          ctx,
+		Subscription: subscription,
+	}
+	mock.lockDeleteBySubscription.Lock()
+	mock.calls.DeleteBySubscription = append(mock.calls.DeleteBySubscription, callInfo)
+	mock.lockDeleteBySubscription.Unlock()
+	return mock.DeleteBySubscriptionFunc(ctx, subscription)
+}
+
+// DeleteBySubscriptionCalls gets all the calls that were made to DeleteBySubscription.
+// Check the length with:
+//
+//	len(mockedBlockStore.DeleteBySubscriptionCalls())
+func (mock *MoqBlockStore) DeleteBySubscriptionCalls() []struct {
+	Ctx          context.Context
+	Subscription string
+} {
+	var calls []struct {
+		Ctx          context.Context
+		Subscription string
+	}
+	mock.lockDeleteBySubscription.RLock()
+	calls = mock.calls.DeleteBySubscription
+	mock.lockDeleteBySubscription.RUnlock()
+	return calls
+}
+
 // QueryByPath calls QueryByPathFunc.
 func (mock *MoqBlockStore) QueryByPath(ctx context.Context, path string) (*Record, error) {
 	if mock.QueryByPathFunc == nil {
@@ -195,6 +259,42 @@ func (mock *MoqBlockStore) QueryByPathCalls() []struct {
 	mock.lockQueryByPath.RLock()
 	calls = mock.calls.QueryByPath
 	mock.lockQueryByPath.RUnlock()
+	return calls
+}
+
+// QueryBySubscription calls QueryBySubscriptionFunc.
+func (mock *MoqBlockStore) QueryBySubscription(ctx context.Context, subscription string) ([]Record, error) {
+	if mock.QueryBySubscriptionFunc == nil {
+		panic("MoqBlockStore.QueryBySubscriptionFunc: method is nil but BlockStore.QueryBySubscription was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		Subscription string
+	}{
+		Ctx:          ctx,
+		Subscription: subscription,
+	}
+	mock.lockQueryBySubscription.Lock()
+	mock.calls.QueryBySubscription = append(mock.calls.QueryBySubscription, callInfo)
+	mock.lockQueryBySubscription.Unlock()
+	return mock.QueryBySubscriptionFunc(ctx, subscription)
+}
+
+// QueryBySubscriptionCalls gets all the calls that were made to QueryBySubscription.
+// Check the length with:
+//
+//	len(mockedBlockStore.QueryBySubscriptionCalls())
+func (mock *MoqBlockStore) QueryBySubscriptionCalls() []struct {
+	Ctx          context.Context
+	Subscription string
+} {
+	var calls []struct {
+		Ctx          context.Context
+		Subscription string
+	}
+	mock.lockQueryBySubscription.RLock()
+	calls = mock.calls.QueryBySubscription
+	mock.lockQueryBySubscription.RUnlock()
 	return calls
 }
 

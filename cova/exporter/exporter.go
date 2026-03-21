@@ -52,9 +52,39 @@ type ApplyResponse struct {
 	Results []BlockResult `json:"results"`
 }
 
+// RemoveRequestBlock represents a single block entry in a remove request.
+type RemoveRequestBlock struct {
+	// Name is the namespaced block name.
+	Name string `json:"name"`
+
+	// Paths contains the absolute file paths that were placed for this block.
+	Paths []string `json:"paths"`
+}
+
+// RemoveRequest is the payload sent to an exporter for a remove operation.
+type RemoveRequest struct {
+	Blocks       map[string][]RemoveRequestBlock `json:"blocks"`
+	Manifest     RequestManifest                 `json:"manifest"`
+	Operation    string                          `json:"operation"`
+	Subscription string                          `json:"subscription"`
+}
+
+// RemoveBlockResult holds the outcome for one input block in a remove operation.
+type RemoveBlockResult struct {
+	Error *string `json:"error"`
+	Name  string  `json:"name"`
+}
+
+// RemoveResponse is the payload returned by an exporter after a remove operation.
+type RemoveResponse struct {
+	// Results contains one entry per input block.
+	Results []RemoveBlockResult `json:"results"`
+}
+
 // exporter is the internal interface implemented by all built-in exporters.
 // It does not carry the agent parameter because the dispatcher already resolved
 // which exporter to call.
 type exporter interface {
 	apply(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error)
+	remove(ctx context.Context, req *RemoveRequest) (*RemoveResponse, error)
 }
