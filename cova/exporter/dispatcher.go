@@ -16,10 +16,13 @@ const (
 	agentClaudeCode = "claude-code"
 )
 
-// Dispatcher resolves the appropriate exporter for a given agent and applies blocks.
+// Dispatcher resolves the appropriate exporter for a given agent and applies or removes blocks.
 type Dispatcher interface {
 	// Apply resolves the exporter for the given agent and applies the request.
 	Apply(ctx context.Context, agent string, req *ApplyRequest) (*ApplyResponse, error)
+
+	// Remove resolves the exporter for the given agent and removes the blocks in the request.
+	Remove(ctx context.Context, agent string, req *RemoveRequest) (*RemoveResponse, error)
 }
 
 // DefaultDispatcher implements Dispatcher by first checking built-in exporters,
@@ -70,4 +73,25 @@ func (d *DefaultDispatcher) Apply(ctx context.Context, agent string, req *ApplyR
 	ext := newExternalExporter(path, d.commander)
 
 	return ext.apply(ctx, req)
+}
+
+// Remove resolves the exporter for agent and invokes it with req.
+// Built-in exporters are checked first; if none match, the dispatcher looks for
+// a cova-exporter-{agent} executable on $PATH. An error is returned if
+// neither is found.
+func (d *DefaultDispatcher) Remove(ctx context.Context, agent string, req *RemoveRequest) (*RemoveResponse, error) {
+	if a, ok := d.builtins[agent]; ok {
+		return a.remove(ctx, req)
+	}
+
+	execName := externalExporterPrefix + agent
+
+	path, err := d.programQuery.GetProgramPath(execName)
+	if err != nil {
+		return nil, fmt.Errorf("no exporter found for agent %q: %w", agent, err)
+	}
+
+	ext := newExternalExporter(path, d.commander)
+
+	return ext.remove(ctx, req)
 }

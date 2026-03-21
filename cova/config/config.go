@@ -185,3 +185,57 @@ func upsert(cfg *Config, sub Subscription) UpsertResult {
 
 	return UpsertAdded
 }
+
+// RemoveSubscription performs a locked read-modify-write to remove a subscription by name.
+// It returns true if the subscription was found and removed, false if it was not found.
+func RemoveSubscription(
+	ctx context.Context,
+	fs utils.FileSystem,
+	locker utils.Locker,
+	path string,
+	name string,
+) (bool, error) {
+	var found bool
+
+	lockPath := path + lockSuffix
+
+	if err := fs.CreateDirectory(filepath.Dir(lockPath)); err != nil {
+		return false, fmt.Errorf("creating config directory: %w", err)
+	}
+
+	err := locker.WithLock(ctx, lockPath, func() error {
+		cfg, err := Load(fs, path)
+		if err != nil {
+			return err
+		}
+
+		found = remove(&cfg, name)
+
+		if !found {
+			return nil
+		}
+
+		return Save(fs, path, cfg)
+	})
+	if err != nil {
+		return false, fmt.Errorf("removing subscription %q: %w", name, err)
+	}
+
+	return found, nil
+}
+
+// remove modifies cfg in place, removing the subscription with the given name.
+// It returns true if the subscription was found and removed, false otherwise.
+func remove(cfg *Config, name string) bool {
+	for i, sub := range cfg.Subscriptions {
+		if sub.Name != name {
+			continue
+		}
+
+		cfg.Subscriptions = append(cfg.Subscriptions[:i], cfg.Subscriptions[i+1:]...)
+
+		return true
+	}
+
+	return false
+}

@@ -3,7 +3,9 @@ package apply
 import (
 	"context"
 	"fmt"
+	"maps"
 	"path/filepath"
+	"slices"
 
 	"github.com/MrPointer/agentcoven/cova/block"
 	"github.com/MrPointer/agentcoven/cova/config"
@@ -202,10 +204,14 @@ func applyAgent(ctx context.Context, deps Deps, sc subscriptionContext, agent st
 		prevPaths[r.Path] = struct{}{}
 	}
 
+	// Build an ordered list of (blockType, blockName) pairs from the request.
+	// This preserves the order and allows us to match response results with their types.
+	blockTypeNamePairs := buildBlockTypeNamePairs(resolved)
+
 	newRecords := make([]state.Record, 0)
 	appliedPaths := make(map[string]struct{})
 
-	for _, result := range resp.Results {
+	for i, result := range resp.Results {
 		if result.Error != nil {
 			deps.Logger.Warning(
 				"block %q skipped by exporter (subscription %q, agent %q): %s",
@@ -213,6 +219,12 @@ func applyAgent(ctx context.Context, deps Deps, sc subscriptionContext, agent st
 			)
 
 			continue
+		}
+
+		// Get the block type from the ordered pairs (exporter protocol guarantees result order matches input order).
+		blockType := ""
+		if i < len(blockTypeNamePairs) {
+			blockType = blockTypeNamePairs[i].blockType
 		}
 
 		for _, placement := range result.Placements {
@@ -269,7 +281,7 @@ func applyAgent(ctx context.Context, deps Deps, sc subscriptionContext, agent st
 				Path:         placement.Path,
 				Subscription: sc.sub.Name,
 				Source:       placement.Source,
-				BlockType:    result.Name,
+				BlockType:    blockType,
 				Agent:        agent,
 				Checksum:     "",
 			})
@@ -292,6 +304,31 @@ func applyAgent(ctx context.Context, deps Deps, sc subscriptionContext, agent st
 	}
 
 	return nil
+}
+
+// blockTypeNamePair represents a block type and name pair for ordering.
+type blockTypeNamePair struct {
+	blockType string
+	blockName string
+}
+
+// buildBlockTypeNamePairs builds an ordered list of (blockType, blockName) pairs from the resolved blocks map.
+// The order is deterministic and matches the order of results from the exporter (which uses the same order).
+func buildBlockTypeNamePairs(resolved map[string][]exporter.RequestBlock) []blockTypeNamePair {
+	var pairs []blockTypeNamePair
+
+	blockTypes := slices.Sorted(maps.Keys(resolved))
+
+	for _, blockType := range blockTypes {
+		for _, rb := range resolved[blockType] {
+			pairs = append(pairs, blockTypeNamePair{
+				blockType: blockType,
+				blockName: rb.Name,
+			})
+		}
+	}
+
+	return pairs
 }
 
 // buildResolvedBlocks resolves variants for all discovered blocks and returns the

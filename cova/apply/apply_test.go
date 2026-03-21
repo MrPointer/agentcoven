@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -275,7 +277,129 @@ func TestRun_RunningApplyShouldApplyBlocksWhenEverythingIsPresent(t *testing.T) 
 	require.Equal(t, "/output/.claude/skills/my-skill.md", store.RecordBatchCalls()[0].Records[0].Path)
 	require.Equal(t, "acme-platform", store.RecordBatchCalls()[0].Records[0].Subscription)
 	require.Equal(t, "claude-code", store.RecordBatchCalls()[0].Records[0].Agent)
+	require.Equal(t, "skills", store.RecordBatchCalls()[0].Records[0].BlockType)
 	require.Empty(t, store.RecordBatchCalls()[0].Records[0].Checksum)
+}
+
+func TestRun_StoringBlockTypeShouldPopulateRecordWithBlockType(t *testing.T) {
+	ctx := t.Context()
+
+	envMgr := &osmanager.MoqEnvironmentManager{
+		GetenvFunc: func(key string) string { return "" },
+	}
+	userMgr := &osmanager.MoqUserManager{
+		GetHomeDirFunc: func() (string, error) { return "/home/user", nil },
+	}
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc: func(path string) (bool, error) {
+			// Variants files do not exist.
+			if hasSuffix(path, "variants.yaml") {
+				return false, nil
+			}
+			// All other paths exist except placement paths.
+			if path == "/output/.claude/agents/review-agent.md" || path == "/output/.claude/rules/lint-rule.md" {
+				return false, nil
+			}
+
+			return true, nil
+		},
+		ReadFileContentsFunc: readFileByName,
+		ReadDirectoryFunc: func(path string) ([]os.DirEntry, error) {
+			// Return multiple block type directories: agents, rules
+			switch path {
+			case "/home/user/.cache/cova/repos/github.com/acme/platform/tempdir-worktree":
+				return []os.DirEntry{
+					&fakeDirEntry{name: "agents", isDir: true},
+					&fakeDirEntry{name: "rules", isDir: true},
+				}, nil
+			case "/home/user/.cache/cova/repos/github.com/acme/platform/tempdir-worktree/agents":
+				return []os.DirEntry{&fakeDirEntry{name: "review-agent", isDir: true}}, nil
+			case "/home/user/.cache/cova/repos/github.com/acme/platform/tempdir-worktree/rules":
+				return []os.DirEntry{&fakeDirEntry{name: "lint-rule", isDir: true}}, nil
+			default:
+				return nil, nil
+			}
+		},
+		CreateDirectoryFunc: func(path string) error { return nil },
+		CopyFileFunc:        func(src, dst string) (int64, error) { return 100, nil },
+	}
+
+	git := &workspace.MoqGit{
+		WorktreeAddFunc: func(ctx context.Context, repoDir, ref string) (string, error) {
+			return repoDir + "/tempdir-worktree", nil
+		},
+	}
+
+	store := &state.MoqBlockStore{
+		QueryByPathFunc: func(ctx context.Context, path string) (*state.Record, error) {
+			return nil, state.ErrNotFound
+		},
+		QueryBySubscriptionAgentFunc: func(ctx context.Context, subscription, agent string) ([]state.Record, error) {
+			return nil, nil
+		},
+		RecordBatchFunc: func(ctx context.Context, records []state.Record) error {
+			return nil
+		},
+	}
+
+	// Return results in the same order as inputs (agents first, then rules).
+	exporterResp := &exporter.ApplyResponse{
+		Results: []exporter.BlockResult{
+			{
+				Name: "review-agent",
+				Placements: []exporter.Placement{
+					{
+						Path:   "/output/.claude/agents/review-agent.md",
+						Source: "agents/review-agent/review-agent.md",
+					},
+				},
+			},
+			{
+				Name: "lint-rule",
+				Placements: []exporter.Placement{
+					{
+						Path:   "/output/.claude/rules/lint-rule.md",
+						Source: "rules/lint-rule/lint-rule.md",
+					},
+				},
+			},
+		},
+	}
+	dispatcher := &exporter.MoqDispatcher{
+		ApplyFunc: func(ctx context.Context, agent string, req *exporter.ApplyRequest) (*exporter.ApplyResponse, error) {
+			return exporterResp, nil
+		},
+	}
+
+	deps := makeDeps(fs, store, git, dispatcher, envMgr, userMgr)
+
+	err := Run(ctx, deps, nil)
+
+	require.NoError(t, err)
+	require.Len(t, store.RecordBatchCalls(), 1)
+	records := store.RecordBatchCalls()[0].Records
+	require.Len(t, records, 2)
+
+	// First record should be for agents block type.
+	require.Equal(t, "agents", records[0].BlockType)
+	require.Equal(t, "review-agent", extractBlockName(records[0].Source))
+	require.Equal(t, "/output/.claude/agents/review-agent.md", records[0].Path)
+
+	// Second record should be for rules block type.
+	require.Equal(t, "rules", records[1].BlockType)
+	require.Equal(t, "lint-rule", extractBlockName(records[1].Source))
+	require.Equal(t, "/output/.claude/rules/lint-rule.md", records[1].Path)
+}
+
+// extractBlockName extracts the block name from a source path (e.g., "agents/review-agent/..." -> "review-agent").
+func extractBlockName(source string) string {
+	parts := strings.Split(source, string(filepath.Separator))
+	if len(parts) >= 2 {
+		return parts[1]
+	}
+
+	return ""
 }
 
 func TestRun_RunningApplyShouldSkipBlockWhenExporterReportsError(t *testing.T) {

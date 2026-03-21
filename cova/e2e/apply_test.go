@@ -208,7 +208,7 @@ func TestApply_ApplyingShouldRecordStateForPlacedFiles(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, targetPath, rec.Path)
 	require.Equal(t, "acme-blocks", rec.Subscription)
-	require.Equal(t, "my-skill", rec.BlockType)
+	require.Equal(t, "skills", rec.BlockType)
 	require.Equal(t, "claude-code", rec.Agent)
 }
 

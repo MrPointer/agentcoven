@@ -48,8 +48,14 @@ type BlockStore interface {
 	// QueryBySubscriptionAgent returns all records for the given subscription and agent.
 	QueryBySubscriptionAgent(ctx context.Context, subscription, agent string) ([]Record, error)
 
+	// QueryBySubscription returns all records for the given subscription, regardless of agent.
+	QueryBySubscription(ctx context.Context, subscription string) ([]Record, error)
+
 	// DeleteByPaths removes all records with the given absolute paths.
 	DeleteByPaths(ctx context.Context, paths []string) error
+
+	// DeleteBySubscription removes all records for the given subscription.
+	DeleteBySubscription(ctx context.Context, subscription string) error
 
 	// Close releases the database connection.
 	Close() error

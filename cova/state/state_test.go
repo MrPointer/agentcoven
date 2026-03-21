@@ -182,6 +182,74 @@ func TestQueryBySubscriptionAgent_QueryingShouldReturnEmptySliceWhenNoneMatch(t 
 	require.Empty(t, got)
 }
 
+// --- QueryBySubscription tests ---
+
+func TestQueryBySubscription_QueryingShouldReturnAllRecordsForSubscription(t *testing.T) {
+	store := newMemoryStore(t)
+	ctx := t.Context()
+
+	records := []Record{
+		sampleRecord("/dest/skills/go-coding/system-prompt.md"),
+		sampleRecord("/dest/rules/no-comments/rule.md"),
+		{
+			Path:         "/dest/skills/other/prompt.md",
+			Subscription: "acme-platform",
+			Source:       "skills/other/prompt.md",
+			BlockType:    "skills",
+			Agent:        "openai",
+			Checksum:     "",
+		},
+	}
+
+	require.NoError(t, store.RecordBatch(ctx, records))
+
+	got, err := store.QueryBySubscription(ctx, "acme-platform")
+
+	require.NoError(t, err)
+	require.Len(t, got, 3)
+}
+
+func TestQueryBySubscription_QueryingShouldReturnEmptySliceWhenNoneMatch(t *testing.T) {
+	store := newMemoryStore(t)
+	ctx := t.Context()
+
+	got, err := store.QueryBySubscription(ctx, "no-such-sub")
+
+	require.NoError(t, err)
+	require.Empty(t, got)
+}
+
+func TestQueryBySubscription_QueryingShouldReturnRecordsFromMultipleAgents(t *testing.T) {
+	store := newMemoryStore(t)
+	ctx := t.Context()
+
+	records := []Record{
+		{
+			Path:         "/dest/claude-code/skills/go-coding/system-prompt.md",
+			Subscription: "acme-platform",
+			Source:       "skills/go-coding/system-prompt.md",
+			BlockType:    "skills",
+			Agent:        "claude-code",
+			Checksum:     "abc123",
+		},
+		{
+			Path:         "/dest/openai/skills/go-coding/system-prompt.md",
+			Subscription: "acme-platform",
+			Source:       "skills/go-coding/system-prompt.md",
+			BlockType:    "skills",
+			Agent:        "openai",
+			Checksum:     "def456",
+		},
+	}
+
+	require.NoError(t, store.RecordBatch(ctx, records))
+
+	got, err := store.QueryBySubscription(ctx, "acme-platform")
+
+	require.NoError(t, err)
+	require.Len(t, got, 2)
+}
+
 // --- DeleteByPaths tests ---
 
 func TestDeleteByPaths_DeletingShouldRemoveSpecifiedRecords(t *testing.T) {
@@ -224,6 +292,46 @@ func TestDeleteByPaths_DeletingNonExistentPathsShouldNotError(t *testing.T) {
 	ctx := t.Context()
 
 	err := store.DeleteByPaths(ctx, []string{"/nonexistent/path"})
+
+	require.NoError(t, err)
+}
+
+// --- DeleteBySubscription tests ---
+
+func TestDeleteBySubscription_DeletingShouldRemoveAllRecordsForSubscription(t *testing.T) {
+	store := newMemoryStore(t)
+	ctx := t.Context()
+
+	records := []Record{
+		sampleRecord("/dest/skills/go-coding/system-prompt.md"),
+		sampleRecord("/dest/rules/no-comments/rule.md"),
+		{
+			Path:         "/dest/skills/other/prompt.md",
+			Subscription: "other-sub",
+			Source:       "skills/other/prompt.md",
+			BlockType:    "skills",
+			Agent:        "claude-code",
+			Checksum:     "",
+		},
+	}
+
+	require.NoError(t, store.RecordBatch(ctx, records))
+	require.NoError(t, store.DeleteBySubscription(ctx, "acme-platform"))
+
+	got, err := store.QueryBySubscription(ctx, "acme-platform")
+	require.NoError(t, err)
+	require.Empty(t, got)
+
+	other, err := store.QueryBySubscription(ctx, "other-sub")
+	require.NoError(t, err)
+	require.Len(t, other, 1)
+}
+
+func TestDeleteBySubscription_DeletingNonExistentSubscriptionShouldNotError(t *testing.T) {
+	store := newMemoryStore(t)
+	ctx := t.Context()
+
+	err := store.DeleteBySubscription(ctx, "no-such-sub")
 
 	require.NoError(t, err)
 }

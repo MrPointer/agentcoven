@@ -554,3 +554,142 @@ func TestSave_SavingConfigShouldPassBytesReaderToWriteFile(t *testing.T) {
 	_, ok := receivedReader.(*bytes.Reader)
 	require.True(t, ok, "WriteFile should receive a *bytes.Reader")
 }
+
+// --- RemoveSubscription tests ---
+
+func TestRemoveSubscription_RemovingShouldDeleteSubscriptionFromConfig(t *testing.T) {
+	existingYAML := []byte(`subscriptions:
+  - name: acme-platform
+    repo: github.com/acme/blocks
+  - name: other-tools
+    repo: github.com/other/tools
+`)
+
+	var savedCfg config.Config
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:          func(_ string) (bool, error) { return true, nil },
+		ReadFileContentsFunc:    func(_ string) ([]byte, error) { return existingYAML, nil },
+		CreateDirectoryFunc:     func(_ string) error { return nil },
+		CreateTemporaryFileFunc: func(dir, _ string) (string, error) { return dir + "/tmp.yaml", nil },
+		WriteFileFunc: func(_ string, reader io.Reader) (int64, error) {
+			data, err := io.ReadAll(reader)
+			if err != nil {
+				return 0, err
+			}
+
+			if unmarshalErr := yaml.Unmarshal(data, &savedCfg); unmarshalErr != nil {
+				return 0, unmarshalErr
+			}
+
+			return int64(len(data)), nil
+		},
+		RenameFunc: func(_, _ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, fn func() error) error { return fn() },
+	}
+
+	found, err := config.RemoveSubscription(t.Context(), fs, locker, "/cfg/config.yaml", "acme-platform")
+
+	require.NoError(t, err)
+	require.True(t, found)
+	require.Len(t, savedCfg.Subscriptions, 1)
+	require.Equal(t, "other-tools", savedCfg.Subscriptions[0].Name)
+}
+
+func TestRemoveSubscription_RemovingShouldReturnFalseAndNotSaveWhenSubscriptionNotFound(t *testing.T) {
+	existingYAML := []byte(`subscriptions:
+  - name: other-tools
+    repo: github.com/other/tools
+`)
+
+	var writeCalled bool
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:       func(_ string) (bool, error) { return true, nil },
+		ReadFileContentsFunc: func(_ string) ([]byte, error) { return existingYAML, nil },
+		CreateDirectoryFunc:  func(_ string) error { return nil },
+		WriteFileFunc: func(_ string, _ io.Reader) (int64, error) {
+			writeCalled = true
+
+			return 10, nil
+		},
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, fn func() error) error { return fn() },
+	}
+
+	found, err := config.RemoveSubscription(t.Context(), fs, locker, "/cfg/config.yaml", "no-such-sub")
+
+	require.NoError(t, err)
+	require.False(t, found)
+	require.False(t, writeCalled, "should not save when subscription not found")
+}
+
+func TestRemoveSubscription_RemovingShouldWorkWhenConfigIsEmpty(t *testing.T) {
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:      func(_ string) (bool, error) { return false, nil },
+		CreateDirectoryFunc: func(_ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, fn func() error) error { return fn() },
+	}
+
+	found, err := config.RemoveSubscription(t.Context(), fs, locker, "/cfg/config.yaml", "no-such-sub")
+
+	require.NoError(t, err)
+	require.False(t, found)
+}
+
+func TestRemoveSubscription_RemovingShouldUseLockFileSuffix(t *testing.T) {
+	var lockedPath string
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:          func(_ string) (bool, error) { return false, nil },
+		CreateDirectoryFunc:     func(_ string) error { return nil },
+		CreateTemporaryFileFunc: func(dir, _ string) (string, error) { return dir + "/tmp.yaml", nil },
+		WriteFileFunc:           func(_ string, _ io.Reader) (int64, error) { return 10, nil },
+		RenameFunc:              func(_, _ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, path string, fn func() error) error {
+			lockedPath = path
+
+			return fn()
+		},
+	}
+
+	_, err := config.RemoveSubscription(t.Context(), fs, locker, "/cfg/config.yaml", "test")
+
+	require.NoError(t, err)
+	require.Equal(t, "/cfg/config.yaml.lock", lockedPath)
+}
+
+func TestRemoveSubscription_RemovingShouldReturnErrorWhenDirCreationFails(t *testing.T) {
+	fs := &utils.MoqFileSystem{
+		CreateDirectoryFunc: func(_ string) error { return errors.New("permission denied") },
+	}
+	locker := &utils.MoqLocker{}
+
+	_, err := config.RemoveSubscription(t.Context(), fs, locker, "/cfg/config.yaml", "test")
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "creating config directory")
+}
+
+func TestRemoveSubscription_RemovingShouldReturnErrorWhenLockFails(t *testing.T) {
+	fs := &utils.MoqFileSystem{
+		CreateDirectoryFunc: func(_ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, _ func() error) error {
+			return errors.New("lock timeout")
+		},
+	}
+
+	_, err := config.RemoveSubscription(t.Context(), fs, locker, "/cfg/config.yaml", "test")
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "removing subscription")
+}

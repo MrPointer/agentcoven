@@ -22,6 +22,9 @@ var _ exporter = &Moqexporter{}
 //			applyFunc: func(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error) {
 //				panic("mock out the apply method")
 //			},
+//			removeFunc: func(ctx context.Context, req *RemoveRequest) (*RemoveResponse, error) {
+//				panic("mock out the remove method")
+//			},
 //		}
 //
 //		// use mockedexporter in code that requires exporter
@@ -32,6 +35,9 @@ type Moqexporter struct {
 	// applyFunc mocks the apply method.
 	applyFunc func(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error)
 
+	// removeFunc mocks the remove method.
+	removeFunc func(ctx context.Context, req *RemoveRequest) (*RemoveResponse, error)
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// apply holds details about calls to the apply method.
@@ -41,8 +47,16 @@ type Moqexporter struct {
 			// Req is the req argument value.
 			Req *ApplyRequest
 		}
+		// remove holds details about calls to the remove method.
+		remove []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Req is the req argument value.
+			Req *RemoveRequest
+		}
 	}
-	lockapply sync.RWMutex
+	lockapply  sync.RWMutex
+	lockremove sync.RWMutex
 }
 
 // apply calls applyFunc.
@@ -78,5 +92,41 @@ func (mock *Moqexporter) applyCalls() []struct {
 	mock.lockapply.RLock()
 	calls = mock.calls.apply
 	mock.lockapply.RUnlock()
+	return calls
+}
+
+// remove calls removeFunc.
+func (mock *Moqexporter) remove(ctx context.Context, req *RemoveRequest) (*RemoveResponse, error) {
+	if mock.removeFunc == nil {
+		panic("Moqexporter.removeFunc: method is nil but exporter.remove was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		Req *RemoveRequest
+	}{
+		Ctx: ctx,
+		Req: req,
+	}
+	mock.lockremove.Lock()
+	mock.calls.remove = append(mock.calls.remove, callInfo)
+	mock.lockremove.Unlock()
+	return mock.removeFunc(ctx, req)
+}
+
+// removeCalls gets all the calls that were made to remove.
+// Check the length with:
+//
+//	len(mockedexporter.removeCalls())
+func (mock *Moqexporter) removeCalls() []struct {
+	Ctx context.Context
+	Req *RemoveRequest
+} {
+	var calls []struct {
+		Ctx context.Context
+		Req *RemoveRequest
+	}
+	mock.lockremove.RLock()
+	calls = mock.calls.remove
+	mock.lockremove.RUnlock()
 	return calls
 }

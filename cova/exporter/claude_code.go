@@ -60,6 +60,20 @@ func (a *claudeCodeExporter) apply(_ context.Context, req *ApplyRequest) (*Apply
 	return &ApplyResponse{Results: results}, nil
 }
 
+// remove returns success for every block in the request without performing any side effects.
+// The Claude Code exporter has no cleanup to perform beyond file removal, which the client handles.
+func (a *claudeCodeExporter) remove(_ context.Context, req *RemoveRequest) (*RemoveResponse, error) {
+	var results []RemoveBlockResult
+
+	for _, blocks := range req.Blocks {
+		for _, b := range blocks {
+			results = append(results, RemoveBlockResult{Name: b.Name})
+		}
+	}
+
+	return &RemoveResponse{Results: results}, nil
+}
+
 // buildBlockResult lists the files inside the block's source directory and
 // constructs a placement for each one.
 func (a *claudeCodeExporter) buildBlockResult(workspace, subDir string, b RequestBlock) (BlockResult, error) {
