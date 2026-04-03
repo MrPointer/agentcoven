@@ -8,7 +8,7 @@
 *
 
 # But not these files...
-!/.gitignore
+!.gitignore
 
 # Go
 !*.go
@@ -41,6 +41,8 @@
 
 # Docker
 !Dockerfile
+!*.dockerfile
+!sandbox-entrypoint.sh
 
 # Other
 !.typos.toml
