@@ -12,6 +12,7 @@ This document tracks what's been shipped and what's planned for AgentCoven and `
 - [x] **External exporter execution** — call community exporters via the exporter protocol
 - [x] **State tracking** — SQLite-backed record of applied blocks and placements
 - [x] **`cova remove`** — unsubscribe from a coven and clean up placed files
+- [x] **`cova status`** — show subscriptions, applied blocks, and sync state
 
 ## Phase 1 — Launch
 
@@ -20,7 +21,7 @@ The minimum feature set for a usable first release.
 ### Consuming
 
 - [ ] **`cova update`** — fetch the latest from subscribed repositories and re-apply
-- [ ] **`cova status`** — show subscriptions, applied blocks, and sync state
+- [x] **`cova status`** — show subscriptions, applied blocks, and sync state
 
 ### Contributing
 
@@ -38,6 +39,9 @@ The minimum feature set for a usable first release.
   worktree), tracked, and cleaned up when no longer referenced. This affects `remove` (should clean up a ref's
   worktree when no remaining subscription uses it) and `apply` (should reuse existing worktrees instead of leaking
   new ones).
+- [ ] **Default branch in subscriptions** — `cova add` does not resolve the repository's default branch when `--ref`
+  is not provided, so ref is empty in config. This means `cova status` cannot display which branch a subscription
+  tracks. `cova add` should resolve and store the default branch name at subscription time.
 
 ## Phase 2
 

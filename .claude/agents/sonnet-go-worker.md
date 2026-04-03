@@ -9,6 +9,7 @@ skills:
   - testing-go-code
   - linting-go-code
   - building-go-binaries
+  - applying-effective-go
 ---
 
 You are a Go implementation agent. You write, test, and lint Go code following project conventions.

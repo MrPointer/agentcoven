@@ -49,8 +49,8 @@ If the code and the spec disagree, the spec wins — update the code.
 `cova` is the reference implementation of the client spec, written in Go.
 It applies blocks from coven repositories to the local filesystem.
 
-Implemented commands: `add`, `apply`.
-Planned commands: `remove`, `update`, `status`, `package`, `submit`,
+Implemented commands: `add`, `apply`, `remove`, `status`.
+Planned commands: `update`, `package`, `submit`,
 `exporter add/remove`. See [ROADMAP.md](ROADMAP.md) for details.
 
 Documentation: `docs/cova/`. Implementation: `cova/`.
