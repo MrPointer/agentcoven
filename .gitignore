@@ -18,10 +18,15 @@
 
 !CLAUDE.md
 !AGENTS.md
+!.claude/
 !.claude/settings.json
+!.claude/agents/
 !.claude/agents/**/*
+!.claude/agent-memory/
 !.claude/agent-memory/**/*
+!.claude/skills/
 !.claude/skills/**/*
+!.agents/skills/
 !.agents/skills/**/*
 
 !codebook.toml
