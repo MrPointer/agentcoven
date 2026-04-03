@@ -82,8 +82,6 @@ block.
 
 ## Removing a Coven
 
-> **Not yet implemented:** `cova remove` is not yet implemented.
-
 `cova remove [name...]` unsubscribes from one or more covens. With names, those subscriptions are removed directly.
 Without arguments, cova prompts the user to select interactively.
 
@@ -100,8 +98,6 @@ subscriptions reference the repository, the workspace persists until the user cl
 ---
 
 ## Status
-
-> **Not yet implemented:** `cova status` is not yet implemented.
 
 `cova status` shows a snapshot of what's currently subscribed and applied. No network operations — it reads from
 [config][configuration] and [state][state-tracking] only.
@@ -150,12 +146,27 @@ acme-frontend (5 blocks):
   agents:
     acme-frontend-designer
 
+Applied: 12 blocks (8 skills, 3 rules, 1 agent)
 Agents: claude-code, cursor
 ```
 
 Blocks are listed by name, not by file path.
 The grouping order — subscription then block type — matches how users think
 about their covens: "what did I get from the acme-platform coven?"
+
+Subscriptions with no applied blocks still appear in the verbose listing with a "No blocks applied" message underneath.
+
+### Edge Cases
+
+If there are no subscriptions, `cova status` prints "No subscriptions" and exits cleanly. The subscription path is
+omitted for single-coven repositories (where the path is empty), and the ref is shown only when set. The `Agents` line
+is omitted when no agents are configured.
+
+### Drift Detection (planned)
+
+A future enhancement will compare on-disk file checksums against recorded state to detect files modified outside of
+cova. The state database already stores a checksum field per applied file, but checksums are not yet computed during
+apply.
 
 <!-- Reference Links -->
 [subscriptions]: ../client-spec.md#subscriptions
