@@ -22,6 +22,9 @@ var _ exporter = &Moqexporter{}
 //			applyFunc: func(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error) {
 //				panic("mock out the apply method")
 //			},
+//			infoFunc: func(ctx context.Context) (*InfoResponse, error) {
+//				panic("mock out the info method")
+//			},
 //			removeFunc: func(ctx context.Context, req *RemoveRequest) (*RemoveResponse, error) {
 //				panic("mock out the remove method")
 //			},
@@ -35,6 +38,9 @@ type Moqexporter struct {
 	// applyFunc mocks the apply method.
 	applyFunc func(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error)
 
+	// infoFunc mocks the info method.
+	infoFunc func(ctx context.Context) (*InfoResponse, error)
+
 	// removeFunc mocks the remove method.
 	removeFunc func(ctx context.Context, req *RemoveRequest) (*RemoveResponse, error)
 
@@ -47,6 +53,11 @@ type Moqexporter struct {
 			// Req is the req argument value.
 			Req *ApplyRequest
 		}
+		// info holds details about calls to the info method.
+		info []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 		// remove holds details about calls to the remove method.
 		remove []struct {
 			// Ctx is the ctx argument value.
@@ -56,6 +67,7 @@ type Moqexporter struct {
 		}
 	}
 	lockapply  sync.RWMutex
+	lockinfo   sync.RWMutex
 	lockremove sync.RWMutex
 }
 
@@ -92,6 +104,38 @@ func (mock *Moqexporter) applyCalls() []struct {
 	mock.lockapply.RLock()
 	calls = mock.calls.apply
 	mock.lockapply.RUnlock()
+	return calls
+}
+
+// info calls infoFunc.
+func (mock *Moqexporter) info(ctx context.Context) (*InfoResponse, error) {
+	if mock.infoFunc == nil {
+		panic("Moqexporter.infoFunc: method is nil but exporter.info was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockinfo.Lock()
+	mock.calls.info = append(mock.calls.info, callInfo)
+	mock.lockinfo.Unlock()
+	return mock.infoFunc(ctx)
+}
+
+// infoCalls gets all the calls that were made to info.
+// Check the length with:
+//
+//	len(mockedexporter.infoCalls())
+func (mock *Moqexporter) infoCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockinfo.RLock()
+	calls = mock.calls.info
+	mock.lockinfo.RUnlock()
 	return calls
 }
 

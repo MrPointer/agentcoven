@@ -19,6 +19,9 @@ var _ ProgramQuery = &MoqProgramQuery{}
 //
 //		// make and configure a mocked ProgramQuery
 //		mockedProgramQuery := &MoqProgramQuery{
+//			FindProgramsByPrefixFunc: func(prefix string) ([]string, error) {
+//				panic("mock out the FindProgramsByPrefix method")
+//			},
 //			GetProgramPathFunc: func(program string) (string, error) {
 //				panic("mock out the GetProgramPath method")
 //			},
@@ -35,6 +38,9 @@ var _ ProgramQuery = &MoqProgramQuery{}
 //
 //	}
 type MoqProgramQuery struct {
+	// FindProgramsByPrefixFunc mocks the FindProgramsByPrefix method.
+	FindProgramsByPrefixFunc func(prefix string) ([]string, error)
+
 	// GetProgramPathFunc mocks the GetProgramPath method.
 	GetProgramPathFunc func(program string) (string, error)
 
@@ -46,6 +52,11 @@ type MoqProgramQuery struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// FindProgramsByPrefix holds details about calls to the FindProgramsByPrefix method.
+		FindProgramsByPrefix []struct {
+			// Prefix is the prefix argument value.
+			Prefix string
+		}
 		// GetProgramPath holds details about calls to the GetProgramPath method.
 		GetProgramPath []struct {
 			// Program is the program argument value.
@@ -68,9 +79,42 @@ type MoqProgramQuery struct {
 			Program string
 		}
 	}
-	lockGetProgramPath    sync.RWMutex
-	lockGetProgramVersion sync.RWMutex
-	lockProgramExists     sync.RWMutex
+	lockFindProgramsByPrefix sync.RWMutex
+	lockGetProgramPath       sync.RWMutex
+	lockGetProgramVersion    sync.RWMutex
+	lockProgramExists        sync.RWMutex
+}
+
+// FindProgramsByPrefix calls FindProgramsByPrefixFunc.
+func (mock *MoqProgramQuery) FindProgramsByPrefix(prefix string) ([]string, error) {
+	if mock.FindProgramsByPrefixFunc == nil {
+		panic("MoqProgramQuery.FindProgramsByPrefixFunc: method is nil but ProgramQuery.FindProgramsByPrefix was just called")
+	}
+	callInfo := struct {
+		Prefix string
+	}{
+		Prefix: prefix,
+	}
+	mock.lockFindProgramsByPrefix.Lock()
+	mock.calls.FindProgramsByPrefix = append(mock.calls.FindProgramsByPrefix, callInfo)
+	mock.lockFindProgramsByPrefix.Unlock()
+	return mock.FindProgramsByPrefixFunc(prefix)
+}
+
+// FindProgramsByPrefixCalls gets all the calls that were made to FindProgramsByPrefix.
+// Check the length with:
+//
+//	len(mockedProgramQuery.FindProgramsByPrefixCalls())
+func (mock *MoqProgramQuery) FindProgramsByPrefixCalls() []struct {
+	Prefix string
+} {
+	var calls []struct {
+		Prefix string
+	}
+	mock.lockFindProgramsByPrefix.RLock()
+	calls = mock.calls.FindProgramsByPrefix
+	mock.lockFindProgramsByPrefix.RUnlock()
+	return calls
 }
 
 // GetProgramPath calls GetProgramPathFunc.

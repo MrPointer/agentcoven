@@ -21,6 +21,12 @@ type Dispatcher interface {
 	// Apply resolves the exporter for the given agent and applies the request.
 	Apply(ctx context.Context, agent string, req *ApplyRequest) (*ApplyResponse, error)
 
+	// Info resolves the exporter for the given agent and returns its info.
+	Info(ctx context.Context, agent string) (*InfoResponse, error)
+
+	// ListAvailable returns info for all discoverable exporters (built-in + external on PATH).
+	ListAvailable(ctx context.Context) ([]InfoResponse, error)
+
 	// Remove resolves the exporter for the given agent and removes the blocks in the request.
 	Remove(ctx context.Context, agent string, req *RemoveRequest) (*RemoveResponse, error)
 }
@@ -94,4 +100,68 @@ func (d *DefaultDispatcher) Remove(ctx context.Context, agent string, req *Remov
 	ext := newExternalExporter(path, d.commander)
 
 	return ext.remove(ctx, req)
+}
+
+// Info resolves the exporter for agent and returns its info.
+// Built-in exporters are checked first; if none match, the dispatcher looks for
+// a cova-exporter-{agent} executable on $PATH. An error is returned if
+// neither is found.
+func (d *DefaultDispatcher) Info(ctx context.Context, agent string) (*InfoResponse, error) {
+	if a, ok := d.builtins[agent]; ok {
+		return a.info(ctx)
+	}
+
+	execName := externalExporterPrefix + agent
+
+	path, err := d.programQuery.GetProgramPath(execName)
+	if err != nil {
+		return nil, fmt.Errorf("no exporter found for agent %q: %w", agent, err)
+	}
+
+	ext := newExternalExporter(path, d.commander)
+
+	return ext.info(ctx)
+}
+
+// ListAvailable returns info for all discoverable exporters.
+// Built-ins are enumerated first. External exporters found on $PATH via
+// FindProgramsByPrefix are then added; if a name already appears from a
+// built-in, the external entry is skipped (built-in wins).
+func (d *DefaultDispatcher) ListAvailable(ctx context.Context) ([]InfoResponse, error) {
+	seen := make(map[string]struct{})
+	results := make([]InfoResponse, 0, len(d.builtins))
+
+	for _, exp := range d.builtins {
+		resp, err := exp.info(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("getting info for built-in exporter: %w", err)
+		}
+
+		resp.BuiltIn = true
+		seen[resp.Name] = struct{}{}
+		results = append(results, *resp)
+	}
+
+	paths, err := d.programQuery.FindProgramsByPrefix(externalExporterPrefix)
+	if err != nil {
+		return nil, fmt.Errorf("scanning PATH for external exporters: %w", err)
+	}
+
+	for _, p := range paths {
+		ext := newExternalExporter(p, d.commander)
+
+		resp, err := ext.info(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("getting info for external exporter %q: %w", p, err)
+		}
+
+		if _, exists := seen[resp.Name]; exists {
+			continue
+		}
+
+		seen[resp.Name] = struct{}{}
+		results = append(results, *resp)
+	}
+
+	return results, nil
 }

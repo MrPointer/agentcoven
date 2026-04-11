@@ -1,0 +1,279 @@
+package exporter
+
+import (
+	"context"
+	"errors"
+	"io"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
+
+	"github.com/MrPointer/agentcoven/cova/utils"
+	"github.com/MrPointer/agentcoven/cova/utils/logger"
+	"github.com/MrPointer/agentcoven/cova/utils/osmanager"
+)
+
+func TestAdd_AddingExportersShouldLogPerNameResults(t *testing.T) {
+	var infoCalls []string
+
+	mockLogger := &logger.MoqLogger{
+		InfoFunc: func(format string, args ...any) {
+			infoCalls = append(infoCalls, format)
+		},
+	}
+
+	mockEnv := &osmanager.MoqEnvironmentManager{
+		GetenvFunc: func(key string) string {
+			if key == "XDG_CONFIG_HOME" {
+				return "/tmp/testconfig"
+			}
+
+			return ""
+		},
+	}
+
+	mockUser := &osmanager.MoqUserManager{
+		GetHomeDirFunc: func() (string, error) {
+			return "/home/test", nil
+		},
+	}
+
+	configYAML, err := yaml.Marshal(map[string]any{
+		"agents": []string{"existing-exporter"},
+	})
+	require.NoError(t, err)
+
+	mockFS := &utils.MoqFileSystem{
+		PathExistsFunc: func(path string) (bool, error) {
+			return true, nil
+		},
+		ReadFileContentsFunc: func(path string) ([]byte, error) {
+			return configYAML, nil
+		},
+		CreateDirectoryFunc: func(path string) error {
+			return nil
+		},
+		CreateTemporaryFileFunc: func(dir, pattern string) (string, error) {
+			return dir + "/config-tmp.yaml.tmp", nil
+		},
+		WriteFileFunc: func(path string, reader io.Reader) (int64, error) {
+			return 0, nil
+		},
+		RenameFunc: func(oldPath, newPath string) error {
+			return nil
+		},
+	}
+
+	mockLocker := &utils.MoqLocker{
+		WithLockFunc: func(ctx context.Context, path string, fn func() error) error {
+			return fn()
+		},
+	}
+
+	deps := Deps{
+		Logger:      mockLogger,
+		FileSystem:  mockFS,
+		Locker:      mockLocker,
+		EnvManager:  mockEnv,
+		UserManager: mockUser,
+	}
+
+	err = Add(t.Context(), deps, []string{"new-exporter", "existing-exporter"})
+
+	require.NoError(t, err)
+	require.Len(t, infoCalls, 2)
+}
+
+func TestAdd_AddingExportersShouldLogAddedMessageWhenExporterIsNew(t *testing.T) {
+	var loggedFormats []string
+
+	mockLogger := &logger.MoqLogger{
+		InfoFunc: func(format string, args ...any) {
+			loggedFormats = append(loggedFormats, format)
+		},
+	}
+
+	mockEnv := &osmanager.MoqEnvironmentManager{
+		GetenvFunc: func(key string) string {
+			if key == "XDG_CONFIG_HOME" {
+				return "/tmp/testconfig"
+			}
+
+			return ""
+		},
+	}
+
+	mockUser := &osmanager.MoqUserManager{
+		GetHomeDirFunc: func() (string, error) {
+			return "/home/test", nil
+		},
+	}
+
+	mockFS := &utils.MoqFileSystem{
+		PathExistsFunc: func(path string) (bool, error) {
+			return false, nil
+		},
+		CreateDirectoryFunc: func(path string) error {
+			return nil
+		},
+		CreateTemporaryFileFunc: func(dir, pattern string) (string, error) {
+			return dir + "/config-tmp.yaml.tmp", nil
+		},
+		WriteFileFunc: func(path string, reader io.Reader) (int64, error) {
+			return 0, nil
+		},
+		RenameFunc: func(oldPath, newPath string) error {
+			return nil
+		},
+	}
+
+	mockLocker := &utils.MoqLocker{
+		WithLockFunc: func(ctx context.Context, path string, fn func() error) error {
+			return fn()
+		},
+	}
+
+	deps := Deps{
+		Logger:      mockLogger,
+		FileSystem:  mockFS,
+		Locker:      mockLocker,
+		EnvManager:  mockEnv,
+		UserManager: mockUser,
+	}
+
+	err := Add(t.Context(), deps, []string{"new-exporter"})
+
+	require.NoError(t, err)
+	require.Len(t, loggedFormats, 1)
+	require.Contains(t, loggedFormats[0], "Added")
+}
+
+func TestAdd_AddingExportersShouldLogAlreadyConfiguredWhenExporterExists(t *testing.T) {
+	var loggedFormats []string
+
+	mockLogger := &logger.MoqLogger{
+		InfoFunc: func(format string, args ...any) {
+			loggedFormats = append(loggedFormats, format)
+		},
+	}
+
+	mockEnv := &osmanager.MoqEnvironmentManager{
+		GetenvFunc: func(key string) string {
+			if key == "XDG_CONFIG_HOME" {
+				return "/tmp/testconfig"
+			}
+
+			return ""
+		},
+	}
+
+	mockUser := &osmanager.MoqUserManager{
+		GetHomeDirFunc: func() (string, error) {
+			return "/home/test", nil
+		},
+	}
+
+	configYAML, err := yaml.Marshal(map[string]any{
+		"agents": []string{"existing-exporter"},
+	})
+	require.NoError(t, err)
+
+	mockFS := &utils.MoqFileSystem{
+		PathExistsFunc: func(path string) (bool, error) {
+			return true, nil
+		},
+		ReadFileContentsFunc: func(path string) ([]byte, error) {
+			return configYAML, nil
+		},
+		CreateDirectoryFunc: func(path string) error {
+			return nil
+		},
+	}
+
+	mockLocker := &utils.MoqLocker{
+		WithLockFunc: func(ctx context.Context, path string, fn func() error) error {
+			return fn()
+		},
+	}
+
+	deps := Deps{
+		Logger:      mockLogger,
+		FileSystem:  mockFS,
+		Locker:      mockLocker,
+		EnvManager:  mockEnv,
+		UserManager: mockUser,
+	}
+
+	err = Add(t.Context(), deps, []string{"existing-exporter"})
+
+	require.NoError(t, err)
+	require.Len(t, loggedFormats, 1)
+	require.Contains(t, loggedFormats[0], "already configured")
+}
+
+func TestAdd_AddingExportersShouldReturnErrorWhenConfigPathResolutionFails(t *testing.T) {
+	mockEnv := &osmanager.MoqEnvironmentManager{
+		GetenvFunc: func(key string) string {
+			return ""
+		},
+	}
+
+	mockUser := &osmanager.MoqUserManager{
+		GetHomeDirFunc: func() (string, error) {
+			return "", errors.New("cannot determine home directory")
+		},
+	}
+
+	deps := Deps{
+		EnvManager:  mockEnv,
+		UserManager: mockUser,
+	}
+
+	err := Add(t.Context(), deps, []string{"some-exporter"})
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "resolving config path")
+}
+
+func TestAdd_AddingExportersShouldReturnErrorWhenAddAgentsFails(t *testing.T) {
+	mockEnv := &osmanager.MoqEnvironmentManager{
+		GetenvFunc: func(key string) string {
+			if key == "XDG_CONFIG_HOME" {
+				return "/tmp/testconfig"
+			}
+
+			return ""
+		},
+	}
+
+	mockUser := &osmanager.MoqUserManager{
+		GetHomeDirFunc: func() (string, error) {
+			return "/home/test", nil
+		},
+	}
+
+	mockFS := &utils.MoqFileSystem{
+		CreateDirectoryFunc: func(path string) error {
+			return errors.New("permission denied")
+		},
+	}
+
+	mockLocker := &utils.MoqLocker{
+		WithLockFunc: func(ctx context.Context, path string, fn func() error) error {
+			return fn()
+		},
+	}
+
+	deps := Deps{
+		FileSystem:  mockFS,
+		Locker:      mockLocker,
+		EnvManager:  mockEnv,
+		UserManager: mockUser,
+	}
+
+	err := Add(t.Context(), deps, []string{"some-exporter"})
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "adding exporters")
+}

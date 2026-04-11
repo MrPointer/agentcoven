@@ -11,6 +11,56 @@ import (
 	"github.com/MrPointer/agentcoven/cova/utils"
 )
 
+func TestExternalExporter_GettingInfoShouldReturnParsedResponse(t *testing.T) {
+	respBytes := []byte(`{"name":"my-exporter","description":"Does something useful"}`)
+
+	mockCommander := &utils.MoqCommander{
+		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
+			return &utils.Result{Stdout: respBytes, ExitCode: 0}, nil
+		},
+	}
+
+	a := newExternalExporter("/usr/local/bin/cova-exporter-my-exporter", mockCommander)
+
+	resp, err := a.info(t.Context())
+
+	require.NoError(t, err)
+	require.Equal(t, "my-exporter", resp.Name)
+	require.Equal(t, "Does something useful", resp.Description)
+}
+
+func TestExternalExporter_GettingInfoShouldReturnFallbackWhenProcessFails(t *testing.T) {
+	mockCommander := &utils.MoqCommander{
+		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
+			return &utils.Result{ExitCode: 1}, errors.New("exit status 1")
+		},
+	}
+
+	a := newExternalExporter("/usr/local/bin/cova-exporter-my-exporter", mockCommander)
+
+	resp, err := a.info(t.Context())
+
+	require.NoError(t, err)
+	require.Equal(t, "my-exporter", resp.Name)
+	require.Empty(t, resp.Description)
+}
+
+func TestExternalExporter_GettingInfoShouldReturnFallbackWhenResponseIsMalformedJSON(t *testing.T) {
+	mockCommander := &utils.MoqCommander{
+		RunCommandFunc: func(ctx context.Context, name string, args []string, opts ...utils.Option) (*utils.Result, error) {
+			return &utils.Result{Stdout: []byte("not json"), ExitCode: 0}, nil
+		},
+	}
+
+	a := newExternalExporter("/usr/local/bin/cova-exporter-my-exporter", mockCommander)
+
+	resp, err := a.info(t.Context())
+
+	require.NoError(t, err)
+	require.Equal(t, "my-exporter", resp.Name)
+	require.Empty(t, resp.Description)
+}
+
 func TestExternalExporter_ApplyingRequestShouldReturnUnmarshalledResponse(t *testing.T) {
 	expectedResp := &ApplyResponse{
 		Results: []BlockResult{

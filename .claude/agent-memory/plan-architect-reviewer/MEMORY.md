@@ -45,3 +45,12 @@
 - State DB: `$XDG_DATA_HOME/cova/state.db`, `modernc.org/sqlite` (pure Go, no CGo)
 - Block discovery (sub-plan 04): stateless functions, not interfaces -- affects testability of apply orchestration
 - Adapter protocol schema divergence: sub-plan 05 redefines `workspace` field as coven root, not workspace root
+
+### Exporter Package Architecture (2026-04-11)
+- `cova/exporter/` files: `exporter.go` (types + internal interface), `dispatcher.go` (Dispatcher interface + DefaultDispatcher), `claude_code.go`, `external.go`
+- `exporter` package does NOT import `config`; `config` does NOT import `exporter` -- no circular dep risk
+- `DefaultDispatcher` constructor: `NewDefaultDispatcher(programQuery, commander, fs, homeDir)`
+- Orchestration convention: each command has own package (`add/`, `remove/`, `apply/`, `status/`) with `Deps` struct + `Run` function
+- Exporter management plan (cova-exporter-management) puts orchestration in `exporter/` instead of a new package -- breaks convention but avoids naming collision
+- `status` package `Deps` includes `Out io.Writer` for testable output -- precedent for list-style commands
+- `ProgramQuery` interface in `osmanager.go` has: GetProgramPath, ProgramExists, GetProgramVersion -- no prefix/glob scanning yet

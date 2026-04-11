@@ -198,6 +198,16 @@ func TestClaudeCodeExporter_ApplyingBlockWithNoFilesShouldReturnEmptyPlacements(
 	require.Empty(t, resp.Results[0].Placements)
 }
 
+func TestClaudeCodeExporter_GettingInfoShouldReturnNameAndDescription(t *testing.T) {
+	a := newClaudeCodeExporter(nil, "/home/user")
+
+	resp, err := a.info(t.Context())
+
+	require.NoError(t, err)
+	require.Equal(t, "claude-code", resp.Name)
+	require.NotEmpty(t, resp.Description)
+}
+
 // fakeDirEntry is a minimal os.DirEntry implementation for tests.
 type fakeDirEntry struct {
 	name  string

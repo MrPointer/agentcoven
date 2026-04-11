@@ -81,10 +81,18 @@ type RemoveResponse struct {
 	Results []RemoveBlockResult `json:"results"`
 }
 
+// InfoResponse is the payload returned by an exporter for an info operation.
+type InfoResponse struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	BuiltIn     bool   `json:"-"` // client-side only, not part of the wire protocol
+}
+
 // exporter is the internal interface implemented by all built-in exporters.
 // It does not carry the agent parameter because the dispatcher already resolved
 // which exporter to call.
 type exporter interface {
 	apply(ctx context.Context, req *ApplyRequest) (*ApplyResponse, error)
+	info(ctx context.Context) (*InfoResponse, error)
 	remove(ctx context.Context, req *RemoveRequest) (*RemoveResponse, error)
 }

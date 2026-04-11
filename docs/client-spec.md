@@ -108,6 +108,27 @@ External exporters are standalone executables named `cova-exporter-{name}`
 (or `{tool}-exporter-{name}` for non-cova implementations) discoverable on `$PATH`. The exporter name in configuration
 maps directly to the executable name, following the git plugin convention.
 
+### Info
+
+The `info` operation is a stateless discovery query — the exporter describes itself. The client may invoke this at any
+time, independent of any subscription or block context. The request carries no additional fields beyond `operation`.
+
+**Input** (stdin):
+
+```json
+{"operation": "info"}
+```
+
+**Output** (stdout):
+
+```json
+{"name": "claude-code", "description": "Places skills and agents for Claude Code under ~/.claude/"}
+```
+
+Both `name` and `description` are required strings. If an external exporter exits non-zero or returns malformed JSON,
+the client must fall back to using the binary name (with the `cova-exporter-` prefix stripped) as the name and an empty
+string as the description.
+
 ### Apply
 
 The client invokes the exporter once per subscription. The exporter receives the subscription's blocks grouped by type,
@@ -288,6 +309,8 @@ IDEs, validators, and exporter authors.
 | Apply Response | [`apply-response.schema.json`][schema-apply-resp] |
 | Remove Request | [`remove-request.schema.json`][schema-remove-req] |
 | Remove Response | [`remove-response.schema.json`][schema-remove-resp] |
+| Info Request | [`info-request.schema.json`][schema-info-req] |
+| Info Response | [`info-response.schema.json`][schema-info-resp] |
 
 <!-- Reference Links -->
 [repo-spec]: ./spec.md
@@ -301,3 +324,5 @@ IDEs, validators, and exporter authors.
 [schema-apply-resp]: ../schemas/exporter/apply-response.schema.json
 [schema-remove-req]: ../schemas/exporter/remove-request.schema.json
 [schema-remove-resp]: ../schemas/exporter/remove-response.schema.json
+[schema-info-req]: ../schemas/exporter/info-request.schema.json
+[schema-info-resp]: ../schemas/exporter/info-response.schema.json
