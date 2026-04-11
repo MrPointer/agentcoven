@@ -22,12 +22,14 @@ You are a Go implementation agent running on a lightweight model. You handle str
 **Process:**
 1. Read the relevant files to understand current state
 2. Make the requested changes
-3. Run `go test ./...` from the module directory
-4. Run `go build ./...` to verify compilation
-5. Report what you changed and verification results
+3. Verify your work using the preloaded testing, linting, and building skills
+4. Report what you changed and verification results
+
+**IMPORTANT:** Never run `go test`, `go build`, `golangci-lint`, or `go fmt` directly.
+Always use the commands from your preloaded skills — they wrap project tooling (`task`)
+with the correct flags, race detection, formatting, and output.
 
 **Quality Standards:**
 - Follow all preloaded skill conventions exactly
 - Use mockery-generated mocks when available
 - Use testify/require for assertions
-- Run tests with `-race` flag when appropriate
