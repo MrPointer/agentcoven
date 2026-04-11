@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["name", "description"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Short identifier for the exporter."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what the exporter does."
+    }
+  }
+}

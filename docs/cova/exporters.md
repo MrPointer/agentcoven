@@ -36,14 +36,22 @@ cova resolves exporter names in order:
 This follows the git plugin convention — the exporter name in [config][configuration] maps directly to a discoverable
 executable.
 
-### Registration
+### Management
 
-`cova exporter add <name>` registers an external exporter:
+`cova exporter add <name> [names...]` adds one or more exporters to the `agents` list in [config][configuration].
+Names are stored as-is with no PATH validation — if a name does not match a built-in or discoverable external exporter,
+the error surfaces at `cova apply` time. Duplicate entries are silently skipped with an informational message.
 
-1. Verifies `cova-exporter-{name}` exists on `$PATH`.
-2. Adds the name to the `agents` list in [config][configuration].
+When invoked with no arguments, `cova exporter add` lists available exporters (equivalent to `cova exporter list`).
 
-`cova exporter remove <name>` unregisters — removes the name from `agents`. It does not uninstall the executable.
+`cova exporter remove <name> [names...]` removes one or more exporters from the `agents` list. Names not found in the
+list produce a warning but the command exits successfully. Removing an exporter does not uninstall executables or clean
+up placed files.
+
+`cova exporter list` shows all available exporters — both built-in and external executables discovered on `$PATH`. Each
+entry shows the exporter name, a short description, and a `[configured]` marker if the exporter is present in the
+`agents` list. External exporters can provide their description via the `info` protocol operation; see the
+[client specification][exporter-protocol] for details.
 
 <!-- Reference Links -->
 [exporter-protocol]: ../client-spec.md#exporter-protocol

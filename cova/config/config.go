@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
 
 	"gopkg.in/yaml.v3"
 
@@ -49,6 +50,18 @@ const (
 	// UpsertNoOp indicates the subscription already existed with identical settings.
 	UpsertNoOp
 )
+
+// AgentAddResult indicates the outcome of adding a single agent.
+type AgentAddResult struct {
+	Name  string
+	Added bool // true = newly added, false = already existed
+}
+
+// AgentRemoveResult indicates the outcome of removing a single agent.
+type AgentRemoveResult struct {
+	Name    string
+	Removed bool // true = found and removed, false = not found
+}
 
 // DefaultPath resolves the config file path using XDG conventions.
 // It checks $XDG_CONFIG_HOME first; if unset or empty, falls back to ~/.config.
@@ -238,4 +251,140 @@ func remove(cfg *Config, name string) bool {
 	}
 
 	return false
+}
+
+// AddAgents performs a locked read-modify-write to add agent names to the config.
+// For each name, if not already present, it is added. Returns per-name results.
+func AddAgents(
+	ctx context.Context,
+	fs utils.FileSystem,
+	locker utils.Locker,
+	path string,
+	names []string,
+) ([]AgentAddResult, error) {
+	var results []AgentAddResult
+
+	lockPath := path + lockSuffix
+
+	if err := fs.CreateDirectory(filepath.Dir(lockPath)); err != nil {
+		return nil, fmt.Errorf("creating config directory: %w", err)
+	}
+
+	err := locker.WithLock(ctx, lockPath, func() error {
+		cfg, err := Load(fs, path)
+		if err != nil {
+			return err
+		}
+
+		results = addAgentsToConfig(&cfg, names)
+
+		// Only save if at least one agent was actually added
+		anyAdded := false
+
+		for _, result := range results {
+			if result.Added {
+				anyAdded = true
+				break
+			}
+		}
+
+		if !anyAdded {
+			return nil
+		}
+
+		return Save(fs, path, cfg)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("adding agents: %w", err)
+	}
+
+	return results, nil
+}
+
+// addAgentsToConfig modifies cfg in place, adding agent names that are not already present.
+// Returns per-name results indicating which were added vs. already existed.
+func addAgentsToConfig(cfg *Config, names []string) []AgentAddResult {
+	results := make([]AgentAddResult, len(names))
+
+	for i, name := range names {
+		if slices.Contains(cfg.Agents, name) {
+			results[i] = AgentAddResult{Name: name, Added: false}
+		} else {
+			cfg.Agents = append(cfg.Agents, name)
+			results[i] = AgentAddResult{Name: name, Added: true}
+		}
+	}
+
+	return results
+}
+
+// RemoveAgents performs a locked read-modify-write to remove agent names from the config.
+// For each name, if present, it is removed. Returns per-name results.
+func RemoveAgents(
+	ctx context.Context,
+	fs utils.FileSystem,
+	locker utils.Locker,
+	path string,
+	names []string,
+) ([]AgentRemoveResult, error) {
+	var results []AgentRemoveResult
+
+	lockPath := path + lockSuffix
+
+	if err := fs.CreateDirectory(filepath.Dir(lockPath)); err != nil {
+		return nil, fmt.Errorf("creating config directory: %w", err)
+	}
+
+	err := locker.WithLock(ctx, lockPath, func() error {
+		cfg, err := Load(fs, path)
+		if err != nil {
+			return err
+		}
+
+		results = removeAgentsFromConfig(&cfg, names)
+
+		// Only save if at least one agent was actually removed
+		anyRemoved := false
+
+		for _, result := range results {
+			if result.Removed {
+				anyRemoved = true
+				break
+			}
+		}
+
+		if !anyRemoved {
+			return nil
+		}
+
+		return Save(fs, path, cfg)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("removing agents: %w", err)
+	}
+
+	return results, nil
+}
+
+// removeAgentsFromConfig modifies cfg in place, removing agent names that are present.
+// Returns per-name results indicating which were removed vs. not found.
+func removeAgentsFromConfig(cfg *Config, names []string) []AgentRemoveResult {
+	results := make([]AgentRemoveResult, len(names))
+
+	for i, name := range names {
+		found := false
+
+		for j, existing := range cfg.Agents {
+			if existing == name {
+				cfg.Agents = append(cfg.Agents[:j], cfg.Agents[j+1:]...)
+				found = true
+
+				break
+			}
+		}
+
+		results[i] = AgentRemoveResult{Name: name, Removed: found}
+	}
+
+	return results
 }

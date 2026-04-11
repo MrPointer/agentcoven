@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
+	"strings"
 
 	"github.com/MrPointer/agentcoven/cova/utils"
 	"github.com/MrPointer/agentcoven/cova/utils/logger"
@@ -37,6 +39,10 @@ type ProgramQuery interface {
 	// ProgramExists checks if a program exists in the system's PATH directories.
 	// It returns true if the program is found, false if not, and an error if there was an issue checking.
 	ProgramExists(program string) (bool, error)
+
+	// FindProgramsByPrefix returns absolute paths of all executables on PATH whose base name starts with prefix.
+	// Deduplicates by base name (first occurrence on PATH wins). Skips unreadable directories.
+	FindProgramsByPrefix(prefix string) ([]string, error)
 
 	// GetProgramVersion retrieves the version of a program by executing it with the provided query arguments.
 	GetProgramVersion(
@@ -152,4 +158,52 @@ func (u *DefaultOsManager) GetProgramVersion(
 // Getenv retrieves the value of the environment variable named by key.
 func (u *DefaultOsManager) Getenv(key string) string {
 	return os.Getenv(key)
+}
+
+// FindProgramsByPrefix returns absolute paths of all executables on PATH whose base name starts with prefix.
+// Results are deduplicated by base name; the first occurrence on PATH wins, matching exec.LookPath semantics.
+// Unreadable or non-existent PATH directories are silently skipped.
+func (u *DefaultOsManager) FindProgramsByPrefix(prefix string) ([]string, error) {
+	pathEnv := u.Getenv("PATH")
+
+	dirs := filepath.SplitList(pathEnv)
+
+	seen := make(map[string]struct{})
+
+	var results []string
+
+	for _, dir := range dirs {
+		entries, err := u.fileSystem.ReadDirectory(dir)
+		if err != nil {
+			continue
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+
+			name := entry.Name()
+			if !strings.HasPrefix(name, prefix) {
+				continue
+			}
+
+			if _, already := seen[name]; already {
+				continue
+			}
+
+			fullPath := filepath.Join(dir, name)
+
+			executable, err := u.fileSystem.IsExecutable(fullPath)
+			if err != nil || !executable {
+				continue
+			}
+
+			seen[name] = struct{}{}
+
+			results = append(results, fullPath)
+		}
+	}
+
+	return results, nil
 }

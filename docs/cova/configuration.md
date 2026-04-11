@@ -33,15 +33,15 @@ The `subscriptions` section follows the [client specification][subscriptions].
 
 ## Agents
 
-| Field    | Required | Description                                                    |
-|----------|----------|----------------------------------------------------------------|
-| `agents` | No       | List of target agents to apply blocks to. If omitted, cova detects installed agents or prompts the user. |
+| Field    | Required | Description                                                                      |
+|----------|----------|----------------------------------------------------------------------------------|
+| `agents` | No       | List of target agents to apply blocks to. If omitted or empty, application is a no-op with a warning. |
 
 Every entry in `agents` must match a known [exporter][exporters]. cova validates this list before applying and rejects
 unknown identifiers with a clear error — no partial application, no guessing.
 
-> **Manual editing required:** Agents are currently managed by editing `config.yaml` directly. A dedicated command
-(e.g., `cova agent add/remove`) to add and remove agent entries interactively is planned as future work.
+Use `cova exporter add` and `cova exporter remove` to manage agent entries, or edit the file directly. See
+[exporters][exporters] for details on available commands.
 
 <!-- Reference Links -->
 [local-config]: ../client-spec.md#local-configuration

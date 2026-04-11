@@ -6,14 +6,14 @@ Module: `github.com/MrPointer/agentcoven/cova`.
 ## Package Layout
 
 ```
-cmd/              Cobra command definitions (root, add, apply, remove, status)
+cmd/              Cobra command definitions (root, add, apply, remove, status, exporter)
 add/              Add command orchestration
 apply/            Apply command orchestration
 remove/           Remove command orchestration
 status/           Status command orchestration
 block/            Block discovery and variant resolution
 config/           YAML config management (subscriptions, agents)
-exporter/         Block placement routing and exporter implementations
+exporter/         Block placement routing, exporter implementations, and management orchestration
 manifest/         Coven manifest parsing
 state/            SQLite-backed block state tracking
 workspace/        Git repository cloning and worktree management
@@ -41,7 +41,7 @@ concrete types from other packages.
 
 Cobra commands in `cmd/` construct a `Deps` struct and delegate to
 the corresponding orchestration package (`add.Run`, `apply.Run`,
-`remove.Run`, `status.Run`).
+`remove.Run`, `status.Run`, `exporter.Add/Remove/List`).
 
 ### Exporter Routing
 

@@ -693,3 +693,362 @@ func TestRemoveSubscription_RemovingShouldReturnErrorWhenLockFails(t *testing.T)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "removing subscription")
 }
+
+// --- AddAgents tests ---
+
+func TestAddAgents_AddingAgentsShouldCreateThemWhenConfigIsEmpty(t *testing.T) {
+	var savedCfg config.Config
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:          func(_ string) (bool, error) { return false, nil },
+		CreateDirectoryFunc:     func(_ string) error { return nil },
+		CreateTemporaryFileFunc: func(dir, _ string) (string, error) { return dir + "/tmp.yaml", nil },
+		WriteFileFunc: func(_ string, reader io.Reader) (int64, error) {
+			data, err := io.ReadAll(reader)
+			if err != nil {
+				return 0, err
+			}
+
+			if unmarshalErr := yaml.Unmarshal(data, &savedCfg); unmarshalErr != nil {
+				return 0, unmarshalErr
+			}
+
+			return int64(len(data)), nil
+		},
+		RenameFunc: func(_, _ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, fn func() error) error { return fn() },
+	}
+
+	results, err := config.AddAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"claude-code", "cursor"})
+
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+	require.True(t, results[0].Added)
+	require.Equal(t, "claude-code", results[0].Name)
+	require.True(t, results[1].Added)
+	require.Equal(t, "cursor", results[1].Name)
+	require.Len(t, savedCfg.Agents, 2)
+	require.Equal(t, "claude-code", savedCfg.Agents[0])
+	require.Equal(t, "cursor", savedCfg.Agents[1])
+}
+
+func TestAddAgents_AddingAgentsShouldSkipDuplicatesAndIndicateResults(t *testing.T) {
+	existingYAML := []byte(`agents:
+  - claude-code
+`)
+
+	var savedCfg config.Config
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:          func(_ string) (bool, error) { return true, nil },
+		ReadFileContentsFunc:    func(_ string) ([]byte, error) { return existingYAML, nil },
+		CreateDirectoryFunc:     func(_ string) error { return nil },
+		CreateTemporaryFileFunc: func(dir, _ string) (string, error) { return dir + "/tmp.yaml", nil },
+		WriteFileFunc: func(_ string, reader io.Reader) (int64, error) {
+			data, err := io.ReadAll(reader)
+			if err != nil {
+				return 0, err
+			}
+
+			if unmarshalErr := yaml.Unmarshal(data, &savedCfg); unmarshalErr != nil {
+				return 0, unmarshalErr
+			}
+
+			return int64(len(data)), nil
+		},
+		RenameFunc: func(_, _ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, fn func() error) error { return fn() },
+	}
+
+	results, err := config.AddAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"claude-code", "cursor"})
+
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+	require.False(t, results[0].Added)
+	require.Equal(t, "claude-code", results[0].Name)
+	require.True(t, results[1].Added)
+	require.Equal(t, "cursor", results[1].Name)
+	require.Len(t, savedCfg.Agents, 2)
+}
+
+func TestAddAgents_AddingAgentsShouldSkipSaveWhenAllAreDuplicates(t *testing.T) {
+	existingYAML := []byte(`agents:
+  - claude-code
+  - cursor
+`)
+
+	var writeCalled bool
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:       func(_ string) (bool, error) { return true, nil },
+		ReadFileContentsFunc: func(_ string) ([]byte, error) { return existingYAML, nil },
+		CreateDirectoryFunc:  func(_ string) error { return nil },
+		WriteFileFunc: func(_ string, _ io.Reader) (int64, error) {
+			writeCalled = true
+
+			return 10, nil
+		},
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, fn func() error) error { return fn() },
+	}
+
+	results, err := config.AddAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"claude-code", "cursor"})
+
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+	require.False(t, results[0].Added)
+	require.False(t, results[1].Added)
+	require.False(t, writeCalled, "should not save when all agents are duplicates")
+}
+
+func TestAddAgents_AddingAgentsShouldUseLockFileSuffix(t *testing.T) {
+	var lockedPath string
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:          func(_ string) (bool, error) { return false, nil },
+		CreateDirectoryFunc:     func(_ string) error { return nil },
+		CreateTemporaryFileFunc: func(dir, _ string) (string, error) { return dir + "/tmp.yaml", nil },
+		WriteFileFunc:           func(_ string, _ io.Reader) (int64, error) { return 10, nil },
+		RenameFunc:              func(_, _ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, path string, fn func() error) error {
+			lockedPath = path
+
+			return fn()
+		},
+	}
+
+	_, err := config.AddAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"claude-code"})
+
+	require.NoError(t, err)
+	require.Equal(t, "/cfg/config.yaml.lock", lockedPath)
+}
+
+func TestAddAgents_AddingAgentsShouldReturnErrorWhenDirCreationFails(t *testing.T) {
+	fs := &utils.MoqFileSystem{
+		CreateDirectoryFunc: func(_ string) error { return errors.New("permission denied") },
+	}
+	locker := &utils.MoqLocker{}
+
+	_, err := config.AddAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"claude-code"})
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "creating config directory")
+}
+
+func TestAddAgents_AddingAgentsShouldReturnErrorWhenLockFails(t *testing.T) {
+	fs := &utils.MoqFileSystem{
+		CreateDirectoryFunc: func(_ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, _ func() error) error {
+			return errors.New("lock timeout")
+		},
+	}
+
+	_, err := config.AddAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"claude-code"})
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "adding agents")
+}
+
+// --- RemoveAgents tests ---
+
+func TestRemoveAgents_RemovingAgentsShouldDeleteThemFromConfig(t *testing.T) {
+	existingYAML := []byte(`agents:
+  - claude-code
+  - cursor
+  - openai-gpt
+`)
+
+	var savedCfg config.Config
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:          func(_ string) (bool, error) { return true, nil },
+		ReadFileContentsFunc:    func(_ string) ([]byte, error) { return existingYAML, nil },
+		CreateDirectoryFunc:     func(_ string) error { return nil },
+		CreateTemporaryFileFunc: func(dir, _ string) (string, error) { return dir + "/tmp.yaml", nil },
+		WriteFileFunc: func(_ string, reader io.Reader) (int64, error) {
+			data, err := io.ReadAll(reader)
+			if err != nil {
+				return 0, err
+			}
+
+			if unmarshalErr := yaml.Unmarshal(data, &savedCfg); unmarshalErr != nil {
+				return 0, unmarshalErr
+			}
+
+			return int64(len(data)), nil
+		},
+		RenameFunc: func(_, _ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, fn func() error) error { return fn() },
+	}
+
+	results, err := config.RemoveAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"cursor"})
+
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	require.True(t, results[0].Removed)
+	require.Equal(t, "cursor", results[0].Name)
+	require.Len(t, savedCfg.Agents, 2)
+	require.Equal(t, "claude-code", savedCfg.Agents[0])
+	require.Equal(t, "openai-gpt", savedCfg.Agents[1])
+}
+
+func TestRemoveAgents_RemovingAgentsShouldReturnNotFoundAndNotSaveWhenAgentNotFound(t *testing.T) {
+	existingYAML := []byte(`agents:
+  - claude-code
+`)
+
+	var writeCalled bool
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:       func(_ string) (bool, error) { return true, nil },
+		ReadFileContentsFunc: func(_ string) ([]byte, error) { return existingYAML, nil },
+		CreateDirectoryFunc:  func(_ string) error { return nil },
+		WriteFileFunc: func(_ string, _ io.Reader) (int64, error) {
+			writeCalled = true
+
+			return 10, nil
+		},
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, fn func() error) error { return fn() },
+	}
+
+	results, err := config.RemoveAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"cursor"})
+
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	require.False(t, results[0].Removed)
+	require.Equal(t, "cursor", results[0].Name)
+	require.False(t, writeCalled, "should not save when agent not found")
+}
+
+func TestRemoveAgents_RemovingAgentsShouldWorkWhenConfigIsEmpty(t *testing.T) {
+	var writeCalled bool
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:      func(_ string) (bool, error) { return false, nil },
+		CreateDirectoryFunc: func(_ string) error { return nil },
+		WriteFileFunc: func(_ string, _ io.Reader) (int64, error) {
+			writeCalled = true
+
+			return 10, nil
+		},
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, fn func() error) error { return fn() },
+	}
+
+	results, err := config.RemoveAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"claude-code"})
+
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	require.False(t, results[0].Removed)
+	require.False(t, writeCalled)
+}
+
+func TestRemoveAgents_RemovingAgentsShouldHandleMixedFoundAndNotFound(t *testing.T) {
+	existingYAML := []byte(`agents:
+  - claude-code
+  - cursor
+`)
+
+	var savedCfg config.Config
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:          func(_ string) (bool, error) { return true, nil },
+		ReadFileContentsFunc:    func(_ string) ([]byte, error) { return existingYAML, nil },
+		CreateDirectoryFunc:     func(_ string) error { return nil },
+		CreateTemporaryFileFunc: func(dir, _ string) (string, error) { return dir + "/tmp.yaml", nil },
+		WriteFileFunc: func(_ string, reader io.Reader) (int64, error) {
+			data, err := io.ReadAll(reader)
+			if err != nil {
+				return 0, err
+			}
+
+			if unmarshalErr := yaml.Unmarshal(data, &savedCfg); unmarshalErr != nil {
+				return 0, unmarshalErr
+			}
+
+			return int64(len(data)), nil
+		},
+		RenameFunc: func(_, _ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, fn func() error) error { return fn() },
+	}
+
+	agentNames := []string{"claude-code", "openai-gpt"}
+	results, err := config.RemoveAgents(t.Context(), fs, locker, "/cfg/config.yaml", agentNames)
+
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+	require.True(t, results[0].Removed)
+	require.Equal(t, "claude-code", results[0].Name)
+	require.False(t, results[1].Removed)
+	require.Equal(t, "openai-gpt", results[1].Name)
+	require.Len(t, savedCfg.Agents, 1)
+	require.Equal(t, "cursor", savedCfg.Agents[0])
+}
+
+func TestRemoveAgents_RemovingAgentsShouldUseLockFileSuffix(t *testing.T) {
+	var lockedPath string
+
+	fs := &utils.MoqFileSystem{
+		PathExistsFunc:          func(_ string) (bool, error) { return false, nil },
+		CreateDirectoryFunc:     func(_ string) error { return nil },
+		CreateTemporaryFileFunc: func(dir, _ string) (string, error) { return dir + "/tmp.yaml", nil },
+		WriteFileFunc:           func(_ string, _ io.Reader) (int64, error) { return 10, nil },
+		RenameFunc:              func(_, _ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, path string, fn func() error) error {
+			lockedPath = path
+
+			return fn()
+		},
+	}
+
+	_, err := config.RemoveAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"claude-code"})
+
+	require.NoError(t, err)
+	require.Equal(t, "/cfg/config.yaml.lock", lockedPath)
+}
+
+func TestRemoveAgents_RemovingAgentsShouldReturnErrorWhenDirCreationFails(t *testing.T) {
+	fs := &utils.MoqFileSystem{
+		CreateDirectoryFunc: func(_ string) error { return errors.New("permission denied") },
+	}
+	locker := &utils.MoqLocker{}
+
+	_, err := config.RemoveAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"claude-code"})
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "creating config directory")
+}
+
+func TestRemoveAgents_RemovingAgentsShouldReturnErrorWhenLockFails(t *testing.T) {
+	fs := &utils.MoqFileSystem{
+		CreateDirectoryFunc: func(_ string) error { return nil },
+	}
+	locker := &utils.MoqLocker{
+		WithLockFunc: func(_ context.Context, _ string, _ func() error) error {
+			return errors.New("lock timeout")
+		},
+	}
+
+	_, err := config.RemoveAgents(t.Context(), fs, locker, "/cfg/config.yaml", []string{"claude-code"})
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "removing agents")
+}

@@ -60,6 +60,14 @@ func (a *claudeCodeExporter) apply(_ context.Context, req *ApplyRequest) (*Apply
 	return &ApplyResponse{Results: results}, nil
 }
 
+// info returns the built-in name and description for the Claude Code exporter.
+func (a *claudeCodeExporter) info(_ context.Context) (*InfoResponse, error) {
+	return &InfoResponse{
+		Name:        "claude-code",
+		Description: "Places skills and agents for Claude Code under ~/.claude/",
+	}, nil
+}
+
 // remove returns success for every block in the request without performing any side effects.
 // The Claude Code exporter has no cleanup to perform beyond file removal, which the client handles.
 func (a *claudeCodeExporter) remove(_ context.Context, req *RemoveRequest) (*RemoveResponse, error) {

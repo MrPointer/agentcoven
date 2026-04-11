@@ -22,6 +22,12 @@ var _ Dispatcher = &MoqDispatcher{}
 //			ApplyFunc: func(ctx context.Context, agent string, req *ApplyRequest) (*ApplyResponse, error) {
 //				panic("mock out the Apply method")
 //			},
+//			InfoFunc: func(ctx context.Context, agent string) (*InfoResponse, error) {
+//				panic("mock out the Info method")
+//			},
+//			ListAvailableFunc: func(ctx context.Context) ([]InfoResponse, error) {
+//				panic("mock out the ListAvailable method")
+//			},
 //			RemoveFunc: func(ctx context.Context, agent string, req *RemoveRequest) (*RemoveResponse, error) {
 //				panic("mock out the Remove method")
 //			},
@@ -34,6 +40,12 @@ var _ Dispatcher = &MoqDispatcher{}
 type MoqDispatcher struct {
 	// ApplyFunc mocks the Apply method.
 	ApplyFunc func(ctx context.Context, agent string, req *ApplyRequest) (*ApplyResponse, error)
+
+	// InfoFunc mocks the Info method.
+	InfoFunc func(ctx context.Context, agent string) (*InfoResponse, error)
+
+	// ListAvailableFunc mocks the ListAvailable method.
+	ListAvailableFunc func(ctx context.Context) ([]InfoResponse, error)
 
 	// RemoveFunc mocks the Remove method.
 	RemoveFunc func(ctx context.Context, agent string, req *RemoveRequest) (*RemoveResponse, error)
@@ -49,6 +61,18 @@ type MoqDispatcher struct {
 			// Req is the req argument value.
 			Req *ApplyRequest
 		}
+		// Info holds details about calls to the Info method.
+		Info []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Agent is the agent argument value.
+			Agent string
+		}
+		// ListAvailable holds details about calls to the ListAvailable method.
+		ListAvailable []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 		// Remove holds details about calls to the Remove method.
 		Remove []struct {
 			// Ctx is the ctx argument value.
@@ -59,8 +83,10 @@ type MoqDispatcher struct {
 			Req *RemoveRequest
 		}
 	}
-	lockApply  sync.RWMutex
-	lockRemove sync.RWMutex
+	lockApply         sync.RWMutex
+	lockInfo          sync.RWMutex
+	lockListAvailable sync.RWMutex
+	lockRemove        sync.RWMutex
 }
 
 // Apply calls ApplyFunc.
@@ -100,6 +126,74 @@ func (mock *MoqDispatcher) ApplyCalls() []struct {
 	mock.lockApply.RLock()
 	calls = mock.calls.Apply
 	mock.lockApply.RUnlock()
+	return calls
+}
+
+// Info calls InfoFunc.
+func (mock *MoqDispatcher) Info(ctx context.Context, agent string) (*InfoResponse, error) {
+	if mock.InfoFunc == nil {
+		panic("MoqDispatcher.InfoFunc: method is nil but Dispatcher.Info was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Agent string
+	}{
+		Ctx:   ctx,
+		Agent: agent,
+	}
+	mock.lockInfo.Lock()
+	mock.calls.Info = append(mock.calls.Info, callInfo)
+	mock.lockInfo.Unlock()
+	return mock.InfoFunc(ctx, agent)
+}
+
+// InfoCalls gets all the calls that were made to Info.
+// Check the length with:
+//
+//	len(mockedDispatcher.InfoCalls())
+func (mock *MoqDispatcher) InfoCalls() []struct {
+	Ctx   context.Context
+	Agent string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Agent string
+	}
+	mock.lockInfo.RLock()
+	calls = mock.calls.Info
+	mock.lockInfo.RUnlock()
+	return calls
+}
+
+// ListAvailable calls ListAvailableFunc.
+func (mock *MoqDispatcher) ListAvailable(ctx context.Context) ([]InfoResponse, error) {
+	if mock.ListAvailableFunc == nil {
+		panic("MoqDispatcher.ListAvailableFunc: method is nil but Dispatcher.ListAvailable was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockListAvailable.Lock()
+	mock.calls.ListAvailable = append(mock.calls.ListAvailable, callInfo)
+	mock.lockListAvailable.Unlock()
+	return mock.ListAvailableFunc(ctx)
+}
+
+// ListAvailableCalls gets all the calls that were made to ListAvailable.
+// Check the length with:
+//
+//	len(mockedDispatcher.ListAvailableCalls())
+func (mock *MoqDispatcher) ListAvailableCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockListAvailable.RLock()
+	calls = mock.calls.ListAvailable
+	mock.lockListAvailable.RUnlock()
 	return calls
 }
 

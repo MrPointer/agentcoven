@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/MrPointer/agentcoven/cova/utils"
 )
@@ -23,6 +26,44 @@ func newExternalExporter(execPath string, commander utils.Commander) *externalEx
 		execPath:  execPath,
 		commander: commander,
 	}
+}
+
+// info sends {"operation":"info"} to the exporter and returns the parsed response.
+// On any failure (non-zero exit, bad JSON, timeout), a fallback InfoResponse is returned
+// with the name derived from the binary and an empty description.
+func (a *externalExporter) info(ctx context.Context) (*InfoResponse, error) {
+	const infoTimeout = 5 * time.Second
+
+	ctx, cancel := context.WithTimeout(ctx, infoTimeout)
+	defer cancel()
+
+	fallback := &InfoResponse{
+		Name:        strings.TrimPrefix(filepath.Base(a.execPath), externalExporterPrefix),
+		Description: "",
+	}
+
+	input, err := json.Marshal(map[string]string{"operation": "info"})
+	if err != nil {
+		return fallback, nil
+	}
+
+	result, err := a.commander.RunCommand(
+		ctx,
+		a.execPath,
+		nil,
+		utils.WithInput(input),
+		utils.WithCaptureOutput(),
+	)
+	if err != nil {
+		return fallback, nil
+	}
+
+	var resp InfoResponse
+	if err := json.Unmarshal(result.Stdout, &resp); err != nil {
+		return fallback, nil
+	}
+
+	return &resp, nil
 }
 
 // apply marshals req to JSON, pipes it to the exporter executable's stdin, and

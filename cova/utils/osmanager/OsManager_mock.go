@@ -19,6 +19,9 @@ var _ OsManager = &MoqOsManager{}
 //
 //		// make and configure a mocked OsManager
 //		mockedOsManager := &MoqOsManager{
+//			FindProgramsByPrefixFunc: func(prefix string) ([]string, error) {
+//				panic("mock out the FindProgramsByPrefix method")
+//			},
 //			GetConfigDirFunc: func() (string, error) {
 //				panic("mock out the GetConfigDir method")
 //			},
@@ -47,6 +50,9 @@ var _ OsManager = &MoqOsManager{}
 //
 //	}
 type MoqOsManager struct {
+	// FindProgramsByPrefixFunc mocks the FindProgramsByPrefix method.
+	FindProgramsByPrefixFunc func(prefix string) ([]string, error)
+
 	// GetConfigDirFunc mocks the GetConfigDir method.
 	GetConfigDirFunc func() (string, error)
 
@@ -70,6 +76,11 @@ type MoqOsManager struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// FindProgramsByPrefix holds details about calls to the FindProgramsByPrefix method.
+		FindProgramsByPrefix []struct {
+			// Prefix is the prefix argument value.
+			Prefix string
+		}
 		// GetConfigDir holds details about calls to the GetConfigDir method.
 		GetConfigDir []struct {
 		}
@@ -106,13 +117,46 @@ type MoqOsManager struct {
 			Program string
 		}
 	}
-	lockGetConfigDir       sync.RWMutex
-	lockGetCurrentUsername sync.RWMutex
-	lockGetHomeDir         sync.RWMutex
-	lockGetProgramPath     sync.RWMutex
-	lockGetProgramVersion  sync.RWMutex
-	lockGetenv             sync.RWMutex
-	lockProgramExists      sync.RWMutex
+	lockFindProgramsByPrefix sync.RWMutex
+	lockGetConfigDir         sync.RWMutex
+	lockGetCurrentUsername   sync.RWMutex
+	lockGetHomeDir           sync.RWMutex
+	lockGetProgramPath       sync.RWMutex
+	lockGetProgramVersion    sync.RWMutex
+	lockGetenv               sync.RWMutex
+	lockProgramExists        sync.RWMutex
+}
+
+// FindProgramsByPrefix calls FindProgramsByPrefixFunc.
+func (mock *MoqOsManager) FindProgramsByPrefix(prefix string) ([]string, error) {
+	if mock.FindProgramsByPrefixFunc == nil {
+		panic("MoqOsManager.FindProgramsByPrefixFunc: method is nil but OsManager.FindProgramsByPrefix was just called")
+	}
+	callInfo := struct {
+		Prefix string
+	}{
+		Prefix: prefix,
+	}
+	mock.lockFindProgramsByPrefix.Lock()
+	mock.calls.FindProgramsByPrefix = append(mock.calls.FindProgramsByPrefix, callInfo)
+	mock.lockFindProgramsByPrefix.Unlock()
+	return mock.FindProgramsByPrefixFunc(prefix)
+}
+
+// FindProgramsByPrefixCalls gets all the calls that were made to FindProgramsByPrefix.
+// Check the length with:
+//
+//	len(mockedOsManager.FindProgramsByPrefixCalls())
+func (mock *MoqOsManager) FindProgramsByPrefixCalls() []struct {
+	Prefix string
+} {
+	var calls []struct {
+		Prefix string
+	}
+	mock.lockFindProgramsByPrefix.RLock()
+	calls = mock.calls.FindProgramsByPrefix
+	mock.lockFindProgramsByPrefix.RUnlock()
+	return calls
 }
 
 // GetConfigDir calls GetConfigDirFunc.
